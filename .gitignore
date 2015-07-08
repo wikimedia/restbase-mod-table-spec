@@ -1,0 +1,8 @@
+coverage/
+.coveralls.yml
+node_modules
+npm-debug.log
+.tern-project
+.tern-port
+*~
+.idea/*
