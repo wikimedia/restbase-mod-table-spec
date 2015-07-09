@@ -5,8 +5,6 @@ require('core-js/shim');
 /*
 *  test router to exercise all tests uning the restbase-cassandra handler
 */
-var fs = require('fs');
-var yaml = require('js-yaml');
 
 var RouteSwitch = require('routeswitch');
 
@@ -51,18 +49,12 @@ router.makeRouter = function(clientConstructor) {
     .then(function(modDef) {
         self.newRouter = new RouteSwitch.fromHandlers([flatHandlerFromModDef(modDef, '/{domain}/sys/table')]);
         return self;
-    })
-    .catch(function(e) {
-        console.log('Error during RESTBase startup: ', e);
     });
 };
 
 module.exports = function(clientConstructor) {
     router.setup = function() {
-        return this.makeRouter(clientConstructor)
-        .catch(function(e) {
-            console.log(e);
-        });
+        return this.makeRouter(clientConstructor);
     };
     return router;
 };

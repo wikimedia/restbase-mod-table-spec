@@ -1,13 +1,23 @@
 "use strict";
 
-module.exports = function(clientConstructor) {
-    module.router = require('./test/utils/test_router.js')(clientConstructor);
-    /*var normalizedPath = require('path').join(__dirname, 'test', 'functional');
-    return require("fs").readdirSync(normalizedPath)
-    .map(function(file) {
-        require('./test/functional/' + file)
-    })*/
-    return [require('./test/functional/simple.js')];
+var path = require('path');
+var fs = require("fs");
+var yaml = require('js-yaml');
+var makeRouter = require('./test/utils/test_router.js');
+
+module.exports = {
+    test: function(clientConstructor) {
+        module.router = makeRouter(clientConstructor);
+        var normalizedPath = path.join(__dirname, 'test', 'functional');
+        fs.readdirSync(normalizedPath)
+        .map(function(file) {
+            console.log(file);
+            require('./test/functional/' + file)
+        });
+    },
+    testUtils: require('./test/utils/test_utils.js'),
+    spec: yaml.safeLoad(fs.readFileSync(__dirname + '/table.yaml')),
+    makeRouter: makeRouter
 };
 
 
