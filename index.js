@@ -11,7 +11,6 @@ module.exports = {
         var normalizedPath = path.join(__dirname, 'test', 'functional');
         fs.readdirSync(normalizedPath)
         .map(function(file) {
-            console.log(file);
             require('./test/functional/' + file)
         });
     },
