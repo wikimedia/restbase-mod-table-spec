@@ -202,7 +202,7 @@ describe('Simple tables', function() {
                         table: 'simple-table',
                         attributes: {
                             key: 'test',
-                            tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
+                            tid: utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700')),
                             latestTid: utils.testTidFromDate(new Date('2014-01-02 00:00:00'))
                         }
                     }
@@ -295,7 +295,7 @@ describe('Simple tables', function() {
                         table: "simple-table",
                         attributes: {
                             key: 'test',
-                            tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700'))
+                            tid: utils.testTidFromDate(new Date('2013-08-09 18:43:58-0700'))
                         }
                     }
                 });
@@ -303,9 +303,9 @@ describe('Simple tables', function() {
             .then(function(response) {
                 deepEqual(response.body.items.length, 1);
                 deepEqual(response.body.items[0].key, 'test');
-                deepEqual(response.body.items[0].tid, '28730300-0095-11e3-9234-0123456789ab');
+                deepEqual(response.body.items[0].tid, utils.testTidFromDate(new Date('2013-08-09 18:43:58-0700')));
                 deepEqual(response.body.items[0].latestTid,
-                    utils.testTidFromDate(new Date('2014-01-01 00:00:00')));
+                    utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
             });
         });
         it('retrieves using order by', function() {
@@ -323,14 +323,14 @@ describe('Simple tables', function() {
             .then(function(response) {
                 deepEqual(response.body.items.length, 2);
                 deepEqual(response.body.items[0].latestTid,
-                    utils.testTidFromDate(new Date('2014-01-01 00:00:00')));
+                    utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
                 deepEqual(response.body.items[1].latestTid,
-                    utils.testTidFromDate(new Date('2014-01-01 00:00:00')));
+                    utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
                 delete response.body.items[0].latestTid;
                 delete response.body.items[1].latestTid;
                 deepEqual(response.body.items, [{
                     "key": "test",
-                    "tid": "52dcc300-015e-11e3-9234-0123456789ab",
+                    "tid": utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700')),
                     "body": null,
                     "content-type": null,
                     "content-length": null,
@@ -339,7 +339,7 @@ describe('Simple tables', function() {
                     "restrictions": null
                 },{
                     key: 'test',
-                    tid: '28730300-0095-11e3-9234-0123456789ab',
+                    tid: utils.testTidFromDate(new Date('2013-08-09 18:43:58-0700')),
                     body: null,
                     'content-type': null,
                     'content-length': null,
