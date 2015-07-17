@@ -9,7 +9,40 @@ var utils = require('../utils/test_utils.js');
 
 describe('Simple tables', function() {
 
-    before(function () { return router.setup(); });
+    before(function() {
+        return router.setup();
+    });
+
+    var simpleTableSchema = {
+        table: 'simple-table',
+        options: {
+            durability: 'low',
+            compression: [
+                {
+                    algorithm: 'deflate',
+                    block_size: 256
+                }
+            ]
+        },
+        attributes: {
+            key: 'string',
+            tid: 'timeuuid',
+            latestTid: 'timeuuid',
+            body: 'blob',
+            'content-type': 'string',
+            'content-length': 'varint',
+            'content-sha256': 'string',
+            // redirect
+            'content-location': 'string',
+            // 'deleted', 'nomove' etc?
+            restrictions: 'set<string>',
+        },
+        index: [
+            {attribute: 'key', type: 'hash'},
+            {attribute: 'latestTid', type: 'static'},
+            {attribute: 'tid', type: 'range', order: 'desc'}
+        ]
+    };
 
     context('Create', function() {
         it('creates a simple test table', function() {
@@ -17,39 +50,19 @@ describe('Simple tables', function() {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/simple-table',
                 method: 'put',
-                body: {
-                    table: 'simple-table',
-                    options: {
-                        durability: 'low',
-                        compression: [
-                            {
-                                algorithm: 'deflate',
-                                block_size: 256
-                            }
-                        ]
-                    },
-                    attributes: {
-                        key: 'string',
-                        tid: 'timeuuid',
-                        latestTid: 'timeuuid',
-                        body: 'blob',
-                        'content-type': 'string',
-                        'content-length': 'varint',
-                        'content-sha256': 'string',
-                        // redirect
-                        'content-location': 'string',
-                        // 'deleted', 'nomove' etc?
-                        restrictions: 'set<string>',
-                    },
-                    index: [
-                        { attribute: 'key', type: 'hash' },
-                        { attribute: 'latestTid', type: 'static' },
-                        { attribute: 'tid', type: 'range', order: 'desc' }
-                    ]
-                }
+                body: simpleTableSchema
             })
             .then(function(response) {
                 deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table',
+                    method: 'get',
+                    body: {}
+                })
+                .then(function(response) {
+                    deepEqual(response.status, 200);
+                    deepEqual(response.body, simpleTableSchema);
+                })
             });
         });
         it('throws an error on unsupported schema update request', function() {
@@ -82,12 +95,12 @@ describe('Simple tables', function() {
                         // NO RESTRICTIONS HERE
                     },
                     index: [
-                        { attribute: 'key', type: 'hash' },
-                        { attribute: 'latestTid', type: 'static' },
-                        { attribute: 'tid', type: 'range', order: 'desc' }
+                        {attribute: 'key', type: 'hash'},
+                        {attribute: 'latestTid', type: 'static'},
+                        {attribute: 'tid', type: 'range', order: 'desc'}
                     ]
                 }
-            }).then(function(response){
+            }).then(function(response) {
                 deepEqual(response.status, 400);
             });
         });
@@ -108,7 +121,7 @@ describe('Simple tables', function() {
                 }
             })
             .then(function(response) {
-                deepEqual(response, {status:201});
+                deepEqual(response, {status: 201});
             });
         });
         it('updates a row', function() {
@@ -125,7 +138,7 @@ describe('Simple tables', function() {
                 }
             })
             .then(function(response) {
-                deepEqual(response, {status:201});
+                deepEqual(response, {status: 201});
             });
         });
         it('inserts using if-not-exists with non index attributes', function() {
@@ -134,7 +147,7 @@ describe('Simple tables', function() {
                 method: 'put',
                 body: {
                     table: "simple-table",
-                    if : "not exists",
+                    if: "not exists",
                     attributes: {
                         key: "testing if not exists",
                         tid: utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700')),
@@ -143,7 +156,65 @@ describe('Simple tables', function() {
                 }
             })
             .then(function(response) {
-                deepEqual(response, {status:201});
+                deepEqual(response, {status: 201});
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "testing if not exists",
+                            tid: utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700')),
+                        }
+                    }
+                })
+                .then(function(response) {
+                    deepEqual(response.status, 200);
+                    deepEqual(response.body.items.length, 1);
+                    deepEqual(response.body.items[0].key, "testing if not exists");
+                    deepEqual(response.body.items[0].tid,
+                        utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700')));
+                    deepEqual(response.body.items[0].body,
+                        new Buffer("<p>if not exists with non key attr</p>"));
+                });
+            });
+        });
+        it('does not replace using if-not-exist if exists', function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                method: 'put',
+                body: {
+                    table: "simple-table",
+                    if: "not exists",
+                    attributes: {
+                        key: "testing if not exists",
+                        tid: utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700')),
+                        body: new Buffer("<p>new body we wanted to replace</p>")
+                    }
+                }
+            })
+            .then(function(response) {
+                deepEqual(response, {status: 201});
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "testing if not exists",
+                            tid: utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700'))
+                        }
+                    }
+                })
+                .then(function(response) {
+                    deepEqual(response.status, 200);
+                    deepEqual(response.body.items.length, 1);
+                    deepEqual(response.body.items[0].key, "testing if not exists");
+                    deepEqual(response.body.items[0].tid,
+                        utils.testTidFromDate(new Date('2013-08-10 18:43:58-0700')));
+                    deepEqual(response.body.items[0].body,
+                        new Buffer("<p>if not exists with non key attr</p>"));
+                });
             });
         });
         it('inserts with if-condition and non index attributes', function() {
@@ -155,14 +226,87 @@ describe('Simple tables', function() {
                     attributes: {
                         key: "another test",
                         tid: utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')),
-                        body: new Buffer("<p>test<p>")
+                        body: new Buffer("<p>Service Oriented Architecture</p>")
+                    }
+                }
+            }).then(function() {
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'put',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "another test",
+                            tid: utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')),
+                            body: new Buffer("<p>test<p>")
+                        },
+                        if: {body: {"eq": new Buffer("<p>Service Oriented Architecture</p>")}}
+                    }
+                })
+            })
+            .then(function(response) {
+                deepEqual(response, {status: 201});
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "another test",
+                            tid: utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700'))
+                        }
+                    }
+                })
+                .then(function(response) {
+                    console.log(response);
+                    deepEqual(response.status, 200);
+                    deepEqual(response.body.items.length, 1);
+                    deepEqual(response.body.items[0].key, 'another test');
+                    deepEqual(response.body.items[0].tid,
+                        utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')));
+                    deepEqual(response.body.items[0].body, new Buffer("<p>test<p>"));
+                })
+            });
+        });
+        it ('does not inserts with if-condition in case condition is false', function() {
+            // Now we have different body, so request shouldn't modify the resourse
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                method: 'put',
+                body: {
+                    table: "simple-table",
+                    attributes: {
+                        key: "another test",
+                        tid: utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')),
+                        body: new Buffer("<p>new test data<p>")
                     },
-                    if: { body: { "eq": new Buffer("<p>Service Oriented Architecture</p>") } }
+                    if: {body: {"eq": new Buffer("<p>Service Oriented Architecture</p>")}}
                 }
             })
             .then(function(response) {
-                deepEqual(response, {status:201});
-            });
+                deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "another test",
+                            tid: utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700'))
+                        }
+                    }
+                });
+            })
+            .then(function(response) {
+                console.log(response);
+                deepEqual(response.status, 200);
+                deepEqual(response.body.items.length, 1);
+                deepEqual(response.body.items[0].key, 'another test');
+                deepEqual(response.body.items[0].tid,
+                utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')));
+                // The body was not modified
+                deepEqual(response.body.items[0].body, new Buffer("<p>test<p>"));
+            })
         });
         it('inserts static columns', function() {
             return router.request({
@@ -178,7 +322,7 @@ describe('Simple tables', function() {
                 }
             })
             .then(function(response) {
-                deepEqual(response, {status:201});
+                deepEqual(response, {status: 201});
                 return router.request({
                     uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
                     method: 'put',
@@ -194,7 +338,7 @@ describe('Simple tables', function() {
                 });
             })
             .then(function(response) {
-                deepEqual(response, {status:201});
+                deepEqual(response, {status: 201});
                 return router.request({
                     uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
                     method: 'put',
@@ -208,8 +352,8 @@ describe('Simple tables', function() {
                     }
                 });
             })
-            .then(function(response){
-                deepEqual(response, {status:201});
+            .then(function(response) {
+                deepEqual(response, {status: 201});
             });
         });
     });
@@ -217,7 +361,7 @@ describe('Simple tables', function() {
     context('Get', function() {
         it('retrieves a row', function() {
             return router.request({
-                uri:'/restbase.cassandra.test.local/sys/table/simple-table/',
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
                 method: 'get',
                 body: {
                     table: "simple-table",
@@ -229,7 +373,8 @@ describe('Simple tables', function() {
             })
             .then(function(response) {
                 deepEqual(response.body.items.length, 1);
-                deepEqual(response.body.items, [ { key: 'testing',
+                deepEqual(response.body.items, [{
+                    key: 'testing',
                     tid: '28730300-0095-11e3-9234-0123456789ab',
                     latestTid: null,
                     body: null,
@@ -238,7 +383,7 @@ describe('Simple tables', function() {
                     'content-sha256': null,
                     'content-type': null,
                     restrictions: null
-                } ]);
+                }]);
             });
         });
         it('retrieves using between condition', function() {
@@ -250,14 +395,17 @@ describe('Simple tables', function() {
                     //from: 'foo', // key to start the query from (paging)
                     limit: 3,
                     attributes: {
-                        tid: { "BETWEEN": [ utils.testTidFromDate(new Date('2013-07-08 18:43:58-0700')),
-                            utils.testTidFromDate(new Date('2013-08-08 18:45:58-0700'))] },
+                        tid: {
+                            "BETWEEN": [utils.testTidFromDate(new Date('2013-07-08 18:43:58-0700')),
+                                utils.testTidFromDate(new Date('2013-08-08 18:45:58-0700'))]
+                        },
                         key: "testing"
                     }
                 }
             }).then(function(response) {
-                response= response.body;
-                deepEqual(response.items, [{ key: 'testing',
+                response = response.body;
+                deepEqual(response.items, [{
+                    key: 'testing',
                     tid: '28730300-0095-11e3-9234-0123456789ab',
                     latestTid: null,
                     body: null,
@@ -271,7 +419,7 @@ describe('Simple tables', function() {
         });
         it('retrieves static columns', function() {
             return router.request({
-                uri:'/restbase.cassandra.test.local/sys/table/simple-table/',
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
                 method: 'get',
                 body: {
                     table: "simple-table",
@@ -287,9 +435,9 @@ describe('Simple tables', function() {
                 deepEqual(response.body.items[0].key, 'test2');
                 deepEqual(response.body.items[0].body, new Buffer("<p>test<p>"));
                 deepEqual(response.body.items[0].latestTid,
-                    utils.testTidFromDate(new Date('2014-01-01 00:00:00')));
+                utils.testTidFromDate(new Date('2014-01-01 00:00:00')));
                 return router.request({
-                    uri:'/restbase.cassandra.test.local/sys/table/simple-table/',
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
                     method: 'get',
                     body: {
                         table: "simple-table",
@@ -305,12 +453,12 @@ describe('Simple tables', function() {
                 deepEqual(response.body.items[0].key, 'test');
                 deepEqual(response.body.items[0].tid, utils.testTidFromDate(new Date('2013-08-09 18:43:58-0700')));
                 deepEqual(response.body.items[0].latestTid,
-                    utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
+                utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
             });
         });
         it('retrieves using order by', function() {
             return router.request({
-                uri:'/restbase.cassandra.test.local/sys/table/simple-table/',
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
                 method: 'get',
                 body: {
                     table: "simple-table",
@@ -323,9 +471,9 @@ describe('Simple tables', function() {
             .then(function(response) {
                 deepEqual(response.body.items.length, 2);
                 deepEqual(response.body.items[0].latestTid,
-                    utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
+                utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
                 deepEqual(response.body.items[1].latestTid,
-                    utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
+                utils.testTidFromDate(new Date('2014-01-02 00:00:00')));
                 delete response.body.items[0].latestTid;
                 delete response.body.items[1].latestTid;
                 deepEqual(response.body.items, [{
@@ -337,7 +485,7 @@ describe('Simple tables', function() {
                     "content-sha256": null,
                     "content-location": null,
                     "restrictions": null
-                },{
+                }, {
                     key: 'test',
                     tid: utils.testTidFromDate(new Date('2013-08-09 18:43:58-0700')),
                     body: null,
@@ -358,6 +506,17 @@ describe('Simple tables', function() {
                 uri: "/restbase.cassandra.test.local/sys/table/simple-table",
                 method: "delete",
                 body: {}
+            })
+            .then(function(res) {
+                deepEqual(res.status, 204);
+                return router.request({
+                    uri: "/restbase.cassandra.test.local/sys/table/simple-table",
+                    method: "get",
+                    body: {}
+                })
+            })
+            .then(function(res) {
+                deepEqual(res.status, 500);
             });
         });
     });

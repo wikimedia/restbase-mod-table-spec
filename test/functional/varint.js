@@ -122,6 +122,17 @@ describe('Varint tables', function() {
             uri: "/restbase.cassandra.test.local/sys/table/varintTable",
             method: "delete",
             body: {}
+        })
+        .then(function(res) {
+            deepEqual(res.status, 204);
+            return router.request({
+                uri: "/restbase.cassandra.test.local/sys/table/varintTable",
+                method: "get",
+                body: {}
+            })
+        })
+        .then(function(res) {
+            deepEqual(res.status, 500);
         });
     });
 });
