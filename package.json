@@ -8,14 +8,23 @@
     "url": "git+https://github.com/wikimedia/restbase-mod-table-spec.git"
   },
   "keywords": [
-    "restbase"
+    "restbase",
+    "REST",
+    "API",
+    "routing",
+    "orchestration",
+    "storage",
+    "buckets",
+    "tables",
+    "queues",
+    "cassandra"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Wikimedia Service Team <services@wikimedia.org>",
+  "license": "Apache2",
   "bugs": {
-    "url": "https://github.com/wikimedia/restbase-mod-table-spec/issues"
+    "url": "https://phabricator.wikimedia.org/tag/restbase/"
   },
-  "homepage": "https://github.com/wikimedia/restbase-mod-table-spec#readme",
+  "homepage": "https://github.com/wikimedia/restbase-mod-table-spec",
   "dependencies": {
     "core-js": "^0.9.18",
     "coveralls": "2.11.2",
