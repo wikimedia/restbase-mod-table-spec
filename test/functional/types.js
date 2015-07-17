@@ -13,44 +13,79 @@ describe('Types', function() {
 
     before(function () { return router.setup(); });
 
+    var typesTableSpec = {
+        domain: 'restbase.cassandra.test.local',
+        table: 'typeTable',
+        options: { durability: 'low' },
+        attributes: {
+            string: 'string',
+            blob: 'blob',
+            set: 'set<string>',
+            'int': 'int',
+            varint: 'varint',
+            decimal: 'decimal',
+            'float': 'float',
+            'double': 'double',
+            'boolean': 'boolean',
+            timeuuid: 'timeuuid',
+            uuid: 'uuid',
+            timestamp: 'timestamp',
+            json: 'json',
+        },
+        index: [
+            { attribute: 'string', type: 'hash' },
+        ],
+        secondaryIndexes: {
+            test: [
+                { attribute: 'int', type: 'hash' },
+                { attribute: 'string', type: 'range' },
+                { attribute: 'boolean', type: 'range' }
+            ]
+        }
+    };
+    var typeSetsTableSpec = {
+        domain: 'restbase.cassandra.test.local',
+        table: 'typeSetsTable',
+        options: { durability: 'low' },
+        attributes: {
+            string: 'string',
+            set: 'set<string>',
+            blob: 'set<blob>',
+            'int': 'set<int>',
+            varint: 'set<varint>',
+            decimal: 'set<decimal>',
+            'float': 'set<float>',
+            'double': 'set<double>',
+            'boolean': 'set<boolean>',
+            timeuuid: 'set<timeuuid>',
+            uuid: 'set<uuid>',
+            timestamp: 'set<timestamp>',
+            json: 'set<json>',
+        },
+        index: [
+            { attribute: 'string', type: 'hash' },
+        ]
+    };
+
     context('Standard', function() {
         this.timeout(5000);
         it('creates table with various types', function() {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/typeTable',
                 method: 'put',
-                body: {
-                    domain: 'restbase.cassandra.test.local',
-                    table: 'typeTable',
-                    options: { durability: 'low' },
-                    attributes: {
-                        string: 'string',
-                        blob: 'blob',
-                        set: 'set<string>',
-                        'int': 'int',
-                        varint: 'varint',
-                        decimal: 'decimal',
-                        'float': 'float',
-                        'double': 'double',
-                        'boolean': 'boolean',
-                        timeuuid: 'timeuuid',
-                        uuid: 'uuid',
-                        timestamp: 'timestamp',
-                        json: 'json',
-                    },
-                    index: [
-                        { attribute: 'string', type: 'hash' },
-                    ],
-                    secondaryIndexes: {
-                        test: [
-                            { attribute: 'int', type: 'hash' },
-                            { attribute: 'string', type: 'range' },
-                            { attribute: 'boolean', type: 'range' }
-                        ]
-                    }
-                }
-            }).then(function(response) {
+                body:typesTableSpec
+            })
+            .then(function(response) {
                 deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/typeTable',
+                    method: 'get',
+                    body: {}
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 200);
+                deepEqual(response.body, typesTableSpec);
             });
         });
         it('inserts row with various types', function() {
@@ -187,6 +222,17 @@ describe('Types', function() {
                 uri: "/restbase.cassandra.test.local/sys/table/typeTable",
                 method: "delete",
                 body: {}
+            })
+            .then(function(res) {
+                deepEqual(res.status, 204);
+                return router.request({
+                    uri: "/restbase.cassandra.test.local/sys/table/typeTable",
+                    method: "get",
+                    body: {}
+                })
+            })
+            .then(function(res) {
+                deepEqual(res.status, 500);
             });
         });
     });
@@ -197,31 +243,19 @@ describe('Types', function() {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/typeSetsTable',
                 method: 'put',
-                body: {
-                    domain: 'restbase.cassandra.test.local',
-                    table: 'typeSetsTable',
-                    options: { durability: 'low' },
-                    attributes: {
-                        string: 'string',
-                        set: 'set<string>',
-                        blob: 'set<blob>',
-                        'int': 'set<int>',
-                        varint: 'set<varint>',
-                        decimal: 'set<decimal>',
-                        'float': 'set<float>',
-                        'double': 'set<double>',
-                        'boolean': 'set<boolean>',
-                        timeuuid: 'set<timeuuid>',
-                        uuid: 'set<uuid>',
-                        timestamp: 'set<timestamp>',
-                        json: 'set<json>',
-                    },
-                    index: [
-                        { attribute: 'string', type: 'hash' },
-                    ]
-                }
-            }).then(function(response) {
+                body: typeSetsTableSpec
+            })
+            .then(function(response) {
                 deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/typeSetsTable',
+                    method: 'get',
+                    body: {}
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 200);
+                deepEqual(response.body, typeSetsTableSpec);
             });
         });
         it('inserts nulls and equivalents', function() {
@@ -272,6 +306,37 @@ describe('Types', function() {
             })
             .then(function(response){
                 deepEqual(response, {status:201});
+            });
+        });
+        it('removes duplicates from sets', function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/typeSetsTable/',
+                method: 'put',
+                body: {
+                    table: "typeSetsTable",
+                    attributes: {
+                        string: 'duplicates',
+                        set: ['bar','baz','foo', 'bar', 'baz']
+                    }
+                }
+            })
+            .then(function(response){
+                deepEqual(response, {status:201});
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/typeSetsTable/',
+                    method: 'get',
+                    body: {
+                        table: "typeSetsTable",
+                        attributes: {
+                            string: 'duplicates'
+                        }
+                    }
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 200);
+                deepEqual(response.body.items.length, 1);
+                deepEqual(response.body.items[0].set, ['bar','baz','foo']);
             });
         });
         it('retrieves nulls and equivalents', function() {
@@ -342,6 +407,17 @@ describe('Types', function() {
                 uri: "/restbase.cassandra.test.local/sys/table/typeSetsTable",
                 method: "delete",
                 body: {}
+            })
+            .then(function(res) {
+                deepEqual(res.status, 204);
+                return router.request({
+                    uri: "/restbase.cassandra.test.local/sys/table/typeSetsTable",
+                    method: "get",
+                    body: {}
+                })
+            })
+            .then(function(res) {
+                deepEqual(res.status, 500);
             });
         });
     });
