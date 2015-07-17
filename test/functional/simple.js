@@ -258,7 +258,7 @@ describe('Simple tables', function() {
                     }
                 })
                 .then(function(response) {
-                    console.log(response);
+                    //console.log(response);
                     deepEqual(response.status, 200);
                     deepEqual(response.body.items.length, 1);
                     deepEqual(response.body.items[0].key, 'another test');
@@ -298,7 +298,7 @@ describe('Simple tables', function() {
                 });
             })
             .then(function(response) {
-                console.log(response);
+                //console.log(response);
                 deepEqual(response.status, 200);
                 deepEqual(response.body.items.length, 1);
                 deepEqual(response.body.items[0].key, 'another test');

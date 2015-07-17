@@ -342,7 +342,7 @@ describe('Indices', function() {
                 });
             })
             .then(function(response) {
-                console.log(response);
+                //console.log(response);
                 deepEqual(response.status, 200);
                 deepEqual(response.body, unversionedSecondaryIndexTableSchema);
             });
