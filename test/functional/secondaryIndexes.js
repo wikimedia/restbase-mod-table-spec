@@ -58,6 +58,28 @@ describe('Indices', function() {
             ]
         }
     };
+    var secondaryIndexSchemaWithRangeKeys = {
+        table: 'secondaryIndexSchemaWithRangeKeys',
+        options: { durability: 'low' },
+        attributes: {
+            key: 'string',
+            range: 'int',
+            tid: 'timeuuid',
+            uri: 'string',
+            body: 'string'
+        },
+        index: [
+            { attribute: 'key', type: 'hash' },
+            { attribute: 'range', type: 'range'},
+            { attribute: 'tid', type: 'range', order: 'desc' }
+        ],
+        secondaryIndexes: {
+            by_uri : [
+                { attribute: 'uri', type: 'hash' },
+                { attribute: 'body', type: 'proj' }
+            ]
+        }
+    };
 
     context('Secondary indices', function() {
         it('creates a secondary index table', function() {
@@ -303,6 +325,70 @@ describe('Indices', function() {
                     body: new Buffer("body3")
                 }]);
             });
+        });
+        it('does not override values with different range keys', function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/secondaryIndexSchemaWithRangeKeys',
+                method: 'put',
+                body: secondaryIndexSchemaWithRangeKeys
+            })
+            .then(function(response) {
+                deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/secondaryIndexSchemaWithRangeKeys/',
+                    method: 'put',
+                    body: {
+                        table: "secondaryIndexSchemaWithRangeKeys",
+                        attributes: {
+                            key: "test1",
+                            range: 1,
+                            tid: TimeUuid.now().toString(),
+                            uri: "uri1",
+                            body: 'body1'
+                        }
+                    }
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/secondaryIndexSchemaWithRangeKeys/',
+                    method: 'put',
+                    body: {
+                        table: "secondaryIndexSchemaWithRangeKeys",
+                        attributes: {
+                            key: "test1",
+                            range: 2,
+                            tid: TimeUuid.now().toString(),
+                            uri: "uri2",
+                            body: 'body2'
+                        }
+                    }
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 201);
+                return router.request({
+                    uri: "/restbase.cassandra.test.local/sys/table/secondaryIndexSchemaWithRangeKeys/",
+                    method: "get",
+                    body: {
+                        table: "secondaryIndexSchemaWithRangeKeys",
+                        index: "by_uri",
+                        attributes: {
+                            uri: "uri1"
+                        },
+                        proj: ['key', 'uri', 'body']
+                    }
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 200);
+                deepEqual(response.body.items.length, 1);
+                deepEqual(response.body.items[0].key, 'test1');
+                deepEqual(response.body.items[0].uri, 'uri1');
+                deepEqual(response.body.items[0].body.toString(), 'body1');
+
+            })
         });
         this.timeout(15000);
         it('successfully drop secondary index tables', function() {
