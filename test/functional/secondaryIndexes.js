@@ -327,6 +327,9 @@ describe('Indices', function() {
             });
         });
         it('does not override values with different range keys', function() {
+            // Corner-case test for SQLite implementation, when a main table contains a range key which is
+            // not tid and not a part of secondary index keys. Verifies that the secondary index entry is not
+            // overwritten if two writes in a main table differs only in the described range key.
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/secondaryIndexSchemaWithRangeKeys',
                 method: 'put',
