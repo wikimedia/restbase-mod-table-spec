@@ -49,6 +49,28 @@ var testSchema = {
     }
 };
 
+var testSchemaNo2ary = {
+    table: 'revPolicyLatestTest-no2ary',
+    options: { durability: 'low' },
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string',
+        author: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'desc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'latest',
+        count: 2,
+        grace_ttl: 10
+    }
+};
+
 describe('MVCC revision policy', function() {
     before(function() {
         return router.setup()
@@ -57,6 +79,16 @@ describe('MVCC revision policy', function() {
                 uri: '/domains_test/sys/table/' + testSchema.table,
                 method: 'put',
                 body: testSchema
+            })
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+            })
+            .then(function() {
+                return router.request({
+                    uri: '/domains_test/sys/table/' + testSchemaNo2ary.table,
+                    method: 'put',
+                    body: testSchemaNo2ary
+                });
             })
             .then(function(response) {
                 assert.deepEqual(response.status, 201);
@@ -69,6 +101,13 @@ describe('MVCC revision policy', function() {
             uri: '/domains_test/sys/table/revPolicyLatestTest',
             method: 'delete',
             body: {}
+        })
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/revPolicyLatestTest-no2ary',
+                method: 'delete',
+                body: {}
+            });
         });
     });
 
@@ -119,13 +158,13 @@ describe('MVCC revision policy', function() {
      * +-----------------------------------------------------------------+-------
      *
      */
-    it('sets a TTL on all but the latest N entries', function() {
-        this.timeout(17000);
+    var revisionRetentionTest = function(test, tableName) {
+        test.timeout(17000);
         return router.request({
-            uri: '/domains_test/sys/table/revPolicyLatestTest/',
+            uri: '/domains_test/sys/table/'+tableName+'/',
             method: 'put',
             body: {
-                table: 'revPolicyLatestTest',
+                table: tableName,
                 consistency: 'localQuorum',
                 attributes: {
                     title: 'Revisioned',
@@ -141,10 +180,10 @@ describe('MVCC revision policy', function() {
         })
         .then(function() {
             return router.request({
-                uri: '/domains_test/sys/table/revPolicyLatestTest/',
+                uri: '/domains_test/sys/table/'+tableName+'/',
                 method: 'put',
                 body: {
-                    table: 'revPolicyLatestTest',
+                    table: tableName,
                     consistency: 'localQuorum',
                     attributes: {
                         title: 'Revisioned',
@@ -160,10 +199,10 @@ describe('MVCC revision policy', function() {
             assert.deepEqual(response, {status:201});
 
             return router.request({
-                uri: '/domains_test/sys/table/revPolicyLatestTest/',
+                uri: '/domains_test/sys/table/'+tableName+'/',
                 method: 'put',
                 body: {
-                    table: 'revPolicyLatestTest',
+                    table: tableName,
                     consistency: 'localQuorum',
                     attributes: {
                         title: 'Revisioned',
@@ -180,10 +219,10 @@ describe('MVCC revision policy', function() {
             assert.deepEqual(response, {status:201});
 
             return router.request({
-                uri: '/domains_test/sys/table/revPolicyLatestTest/',
+                uri: '/domains_test/sys/table/'+tableName+'/',
                 method: 'put',
                 body: {
-                    table: 'revPolicyLatestTest',
+                    table: tableName,
                     consistency: 'localQuorum',
                     attributes: {
                         title: 'Revisioned',
@@ -199,10 +238,10 @@ describe('MVCC revision policy', function() {
             assert.deepEqual(response, {status: 201});
 
             return router.request({
-                uri: '/domains_test/sys/table/revPolicyLatestTest/',
+                uri: '/domains_test/sys/table/'+tableName+'/',
                 method: 'get',
                 body: {
-                    table: 'revPolicyLatestTest',
+                    table: tableName,
                     attributes: {
                         title: 'Revisioned',
                         rev: 1000
@@ -222,10 +261,10 @@ describe('MVCC revision policy', function() {
             assert.deepEqual(response.body.items.length, 4);
 
             return router.request({
-                uri: '/domains_test/sys/table/revPolicyLatestTest/',
+                uri: '/domains_test/sys/table/'+tableName+'/',
                 method: 'get',
                 body: {
-                    table: 'revPolicyLatestTest',
+                    table: tableName,
                     attributes: {
                         title: 'Revisioned',
                         rev: 1000
@@ -246,10 +285,10 @@ describe('MVCC revision policy', function() {
             // the next grace_ttl to expire.
             return P.delay(5000).then(function() {
                 return router.request({
-                    uri: '/domains_test/sys/table/revPolicyLatestTest/',
+                    uri: '/domains_test/sys/table/'+tableName+'/',
                     method: 'get',
                     body: {
-                        table: 'revPolicyLatestTest',
+                        table: tableName,
                         attributes: {
                             title: 'Revisioned',
                             rev: 1000
@@ -266,6 +305,14 @@ describe('MVCC revision policy', function() {
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:02-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:07-0500")));
         });
+    };
+
+    it('sets a TTL on all but the latest N entries (w/ 2ary index)', function() {
+        return revisionRetentionTest(this, 'revPolicyLatestTest');
+    });
+
+    it('sets a TTL on all but the latest N entries (no 2ary indices)', function() {
+        return revisionRetentionTest(this, 'revPolicyLatestTest-no2ary');
     });
 });
 
