@@ -209,7 +209,7 @@ describe('Types', function() {
                         string: 'num_string_test',
                         int: 10,
                         boolean: false,
-                        num_string: '2015'
+                        num_string: '0'
                     }
                 }
             })
