@@ -31,6 +31,7 @@ describe('Types', function() {
             uuid: 'uuid',
             timestamp: 'timestamp',
             json: 'json',
+            num_string: 'string' // String containing a `numeric` value to check it's not converted to number
         },
         index: [
             { attribute: 'string', type: 'hash' },
@@ -109,7 +110,7 @@ describe('Types', function() {
                         timestamp: '2014-11-14T19:10:40.912Z',
                         json: {
                             foo: 'bar'
-                        },
+                        }
                     }
                 }
             })
@@ -138,7 +139,7 @@ describe('Types', function() {
                         timestamp: '2014-11-14T19:10:40.912Z',
                         json: {
                             foo: 'bar'
-                        },
+                        }
                     }
                 }
             })
@@ -178,7 +179,7 @@ describe('Types', function() {
                     timestamp: '2014-11-14T19:10:40.912Z',
                     json: {
                         foo: 'bar'
-                    },
+                    }
                 },{
                     string: 'string',
                     blob: new Buffer('blob'),
@@ -196,6 +197,40 @@ describe('Types', function() {
                         foo: 'bar'
                     }
                 }]);
+            });
+        });
+        it("return string if numeric data saved in string typed field", function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/typeTable/',
+                method: 'put',
+                body: {
+                    table: "typeTable",
+                    attributes: {
+                        string: 'num_string_test',
+                        int: 10,
+                        boolean: false,
+                        num_string: '0'
+                    }
+                }
+            })
+            .then(function(response){
+                deepEqual(response, {status:201});
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/typeTable/',
+                    method: 'get',
+                    body: {
+                        table: "typeTable",
+                        attributes: {
+                            string: 'num_string_test'
+                        },
+                        proj: ['num_string']
+                    }
+                })
+            })
+            .then(function(response) {
+                deepEqual(response.status, 200);
+                deepEqual(response.body.items.length, 1);
+                deepEqual(typeof response.body.items[0].num_string, 'string');
             });
         });
         it("retrieves matching types from index", function() {
