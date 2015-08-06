@@ -16,6 +16,7 @@ module.exports = {
     },
     testUtils: require('./test/utils/test_utils.js'),
     spec: yaml.safeLoad(fs.readFileSync(__dirname + '/table.yaml')),
+    validator: require('./lib/validator'),
     makeRouter: makeRouter
 };
 
