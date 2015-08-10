@@ -253,7 +253,7 @@ describe('Varint tables', function() {
                 attributes: {
                     key: 'testing',
                     rev: { lt: 3 },
-                    test: { ge: 1}
+                    test: { ge: 1 }
                 }
             }
         })
