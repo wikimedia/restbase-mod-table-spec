@@ -502,7 +502,7 @@ describe('Unit tests for validation methods', function() {
             });
         });
 
-        it('secondart index must be defined', function() {
+        it('secondary index must be defined', function() {
             return P.try(function() {
                 validator.validateGetRequest({
                     table: 'test',
