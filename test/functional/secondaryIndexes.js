@@ -70,7 +70,7 @@ describe('Indices', function() {
         },
         index: [
             { attribute: 'key', type: 'hash' },
-            { attribute: 'range', type: 'range'},
+            { attribute: 'range', type: 'range', order: 'desc' },
             { attribute: 'tid', type: 'range', order: 'desc' }
         ],
         secondaryIndexes: {

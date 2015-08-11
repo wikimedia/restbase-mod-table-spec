@@ -39,8 +39,8 @@ describe('Types', function() {
         secondaryIndexes: {
             test: [
                 { attribute: 'int', type: 'hash' },
-                { attribute: 'string', type: 'range' },
-                { attribute: 'boolean', type: 'range' }
+                { attribute: 'string', type: 'range', order: 'desc' },
+                { attribute: 'boolean', type: 'range', order: 'desc' }
             ]
         }
     };
