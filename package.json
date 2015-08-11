@@ -7,6 +7,9 @@
     "type": "git",
     "url": "git+https://github.com/wikimedia/restbase-mod-table-spec.git"
   },
+  "scripts": {
+    "test": "mocha ./test/lib/"
+  },
   "keywords": [
     "restbase",
     "REST",

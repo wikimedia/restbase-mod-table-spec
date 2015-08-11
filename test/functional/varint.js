@@ -207,7 +207,7 @@ describe('Varint tables', function() {
                 limit: 3,
                 attributes: {
                     key: 'testing',
-                    rev: { eq: 1 },
+                    rev: 1,
                     test: { ge: 1 }
                 }
             }
@@ -228,7 +228,7 @@ describe('Varint tables', function() {
                 limit: 3,
                 attributes: {
                     key: 'testing',
-                    rev: { eq: 1 },
+                    rev: 1,
                     test: {
                         ge: 1,
                         lt: 5
