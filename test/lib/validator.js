@@ -6,7 +6,6 @@ require('core-js/shim');
 
 var deepEqual = require('../utils/test_utils').deepEqual;
 var validator = require('../../lib/validator');
-var P = require('bluebird');
 
 function extendSchemaInfo(schema) {
     // Create summary data on the primary data index
@@ -26,6 +25,19 @@ function extendSchemaInfo(schema) {
         }
     });
     return schema;
+}
+
+function test(action, expectedError) {
+    var caught;
+    try {
+        action();
+    } catch (e) {
+        caught = true;
+        deepEqual(expectedError.test(e.message), true);
+    }
+    if (!caught) {
+        throw new Error('Error should be thrown');
+    }
 }
 
 describe('Unit tests for validation methods', function() {
@@ -52,19 +64,14 @@ describe('Unit tests for validation methods', function() {
 
     describe('Schema validation', function() {
         it('must have at least one attribute', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test'
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Attributes are required/.test(e.message), true);
-            });
+            }, /Attributes are required/);
         });
         it('attribute types must be valid', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -74,15 +81,10 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'key', type: 'hash'}
                     ]
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid type of attribute/.test(e.message), true);
-            });
+            }, /Invalid type of attribute/);
         });
         it('index should be non-empty array', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -90,15 +92,10 @@ describe('Unit tests for validation methods', function() {
                     },
                     index: []
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid index\. Must have at least one entry/.test(e.message), true);
-            });
+            }, /Invalid index\. Must have at least one entry/);
         });
         it('index cannot have duplicate attributes', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -109,15 +106,10 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'key', type: 'range', order: 'desc'}
                     ]
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid index\. Duplicate index entries/.test(e.message), true);
-            });
+            }, /Invalid index\. Duplicate index entries/);
         });
         it('index must have at least one hash attribute', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -128,15 +120,10 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'tid', type: 'range', order: 'desc'}
                     ]
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Indexes without hash are not yet supported/.test(e.message), true);
-            });
+            }, /Indexes without hash are not yet supported/);
         });
         it('all indexed attributes must exist in a schema', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -149,15 +136,10 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'not-in-schema', type: 'range', order: 'desc'}
                     ]
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Index element/.test(e.message), true);
-            });
+            }, /Index element/);
         });
         it('range index order must be valid', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -169,15 +151,10 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'tid', type: 'range', order: 'this-is-not-valid'}
                     ]
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid order/.test(e.message), true);
-            });
+            }, /Invalid order/);
         });
         it('static indexes cannot be created on a table with no range indexes', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -189,15 +166,10 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'tid', type: 'static'}
                     ]
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Cannot create static column in table without range keys/.test(e.message), true);
-            });
+            }, /Cannot create static column in table without range keys/)
         });
         it('invalid index names not allowed' , function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -211,15 +183,10 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'body', type: 'this-is-not-valid'}
                     ]
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid index element encountered/.test(e.message), true);
-            });
+            }, /Invalid index element encountered/);
         });
         it('revision policy must have valid keys' , function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -234,15 +201,10 @@ describe('Unit tests for validation methods', function() {
                         'invalid-key': 'invalid-value'
                     }
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Unknown revision policy attribute/.test(e.message), true);
-            });
+            }, /Unknown revision policy attribute/);
         });
         it('revision policy type must be valid' , function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -257,15 +219,10 @@ describe('Unit tests for validation methods', function() {
                         type: 'invalid-value'
                     }
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid revision retention policy type/.test(e.message), true);
-            });
+            }, /Invalid revision retention policy type/);
         });
         it('revision policy grace_ttl must be valid' , function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -281,15 +238,10 @@ describe('Unit tests for validation methods', function() {
                         grace_ttl: 'must not me a string'
                     }
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/grace_ttl must be a number/.test(e.message), true);
-            });
+            }, /grace_ttl must be a number/);
         });
         it('revision policy count must be valid' , function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateAndNormalizeSchema({
                     table: 'test',
                     attributes: {
@@ -305,124 +257,84 @@ describe('Unit tests for validation methods', function() {
                         count: 'must not me a string'
                     }
                 });
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/count must be a number/.test(e.message), true);
-            });
+            }, /count must be a number/);
         });
     });
 
     describe('PUT request validation', function() {
         it('table schema must exist', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validatePutRequest({
                     table: 'test'
                 }, null)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. No schema/.test(e.message), true);
-            });
+            }, /Invalid query\. No schema/);
         });
 
         it('all index keys must be provided', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validatePutRequest({
                     table: 'test',
                     attributes: {
                         body: 'test'
                     }
                 }, sampleSchema);
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Index attribute/.test(e.message), true);
-            });
+            }, /Index attribute/);
         });
     });
 
     describe('GET request validation', function() {
         it('table schema must exist', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test'
                 }, null)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. No schema/.test(e.message), true);
-            });
+            }, /Invalid query\. No schema/);
         });
 
         it('all projection attributes must exist', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     proj: [ 'some_random_proj_attr' ]
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. Projection /.test(e.message), true);
-            });
+            }, /Invalid query\. Projection /);
         });
 
         it('every attribute in the predicate must be indexed', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     attributes: {
                         body: 'sample_body'
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. Attribute /.test(e.message), true);
-            });
+            }, /Invalid query\. Attribute /);
         });
 
         it('every attribute in the predicate must be defined', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     attributes: {
                         body: undefined
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. Attribute /.test(e.message), true);
-            });
+            }, /Invalid query\. Attribute /);
         });
 
         it('non-eq operators allowed only on "range" indexed columns', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     attributes: {
                         key: { gt: 'test'}
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. Non\-eq conditions allowed only on range columns/.test(e.message), true);
-            });
+            }, /Invalid query\. Non\-eq conditions allowed only on range columns/);
         });
 
         it('can\'t have more than one non-eq predicate for different columns', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     attributes: {
@@ -430,16 +342,11 @@ describe('Unit tests for validation methods', function() {
                         range: { le: 'a'}
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. Found /.test(e.message), true);
-            });
+            }, /Invalid query\. Found /);
         });
 
         it('can\'t be an eq predicate after a non-eq predicate', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     attributes: {
@@ -447,74 +354,49 @@ describe('Unit tests for validation methods', function() {
                         range: 'a'
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. Found /.test(e.message), true);
-            });
+            }, /Invalid query\. Found /);
         });
 
         it('predicate operators must be valid', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     attributes: {
                         tid: { this_is_a_wrong_operator: 10}
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Illegal predicate operator/.test(e.message), true);
-            });
+            }, /Illegal predicate operator/);
         });
 
         it('order must be valid', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     order: {
                         tid: 'this-is-not-valid'
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid sort order/.test(e.message), true);
-            });
+            }, /Invalid sort order/);
         });
 
         it('order attributes must be in range indexed', function() {
-            return P.try(function() {
+            test(function() {
                 validator.validateGetRequest({
                     table: 'test',
                     order: {
                         key: 'asc'
                     }
                 }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Cannot order on attribute/.test(e.message), true);
-            });
+            }, /Cannot order on attribute/);
         });
 
-        it('secondary index must be defined', function() {
-            return P.try(function() {
-                validator.validateGetRequest({
-                    table: 'test',
-                    index: 'this_does_not_exist'
-                }, sampleSchema)
-            })
-            .then(function() {
-                throw new Error('Should throw validation error')
-            }, function(e) {
-                deepEqual(/Invalid query\. Index does not exist/.test(e.message), true);
-            });
-        });
+    });
+    it('secondary index must be defined', function() {
+        test(function() {
+            validator.validateGetRequest({
+                table: 'test',
+                index: 'this_does_not_exist'
+            }, sampleSchema)
+        }, /Invalid query\. Index does not exist/);
     });
 });
