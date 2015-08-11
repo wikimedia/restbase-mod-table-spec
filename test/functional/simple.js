@@ -395,11 +395,11 @@ describe('Simple tables', function() {
                     //from: 'foo', // key to start the query from (paging)
                     limit: 3,
                     attributes: {
+                        key: "testing",
                         tid: {
                             "BETWEEN": [utils.testTidFromDate(new Date('2013-07-08 18:43:58-0700')),
                                 utils.testTidFromDate(new Date('2013-08-08 18:45:58-0700'))]
-                        },
-                        key: "testing"
+                        }
                     }
                 }
             }).then(function(response) {
