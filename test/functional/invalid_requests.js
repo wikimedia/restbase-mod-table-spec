@@ -43,4 +43,116 @@ describe('Invalid request handling', function() {
             deepEqual(response.status, 500);
         });
     });
+
+    it('Fails to create static column that is a hash key', function() {
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/staticTest',
+            method: 'put',
+            body: {
+                domain: 'restbase.cassandra.test.local',
+                table: 'staticTest',
+                attributes: {
+                    key: 'string',
+                    tid: 'timeuuid'
+                },
+                index: [
+                    { attribute: 'key', type: 'hash' },
+                    { attribute: 'key', type: 'static' },
+                    { attribute: 'tid', type: 'range', order: 'desc' }
+                ]
+            }
+        })
+        .then(function(response) {
+            deepEqual(response.status, 500);
+        });
+    });
+
+    it('Fails to order on non-range column', function() {
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/orderTest',
+            method: 'put',
+            body: {
+                domain: 'restbase.cassandra.test.local',
+                table: 'orderTest',
+                attributes: {
+                    key: 'string',
+                    tid: 'timeuuid',
+                    custom: 'string'
+                },
+                index: [
+                    { attribute: 'key', type: 'hash' },
+                    { attribute: 'tid', type: 'range', order: 'desc' }
+                ]
+            }
+        })
+        .then(function(response) {
+            deepEqual(response.status, 201);
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/orderTest/',
+                method: 'get',
+                body: {
+                    table: 'orderTest',
+                    attributes: {
+                        key: 'string'
+                    },
+                    order: {
+                        custom: 'asc'
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            deepEqual(response.status, 500);
+        });
+    });
+
+    it('Fails to make a query on non-existing index', function() {
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/orderTest/',
+            method: 'get',
+            body: {
+                table: 'orderTest',
+                attributes: {
+                    key: 'string'
+                },
+                index: 'not_existing!'
+            }
+        })
+        .then(function(response) {
+            deepEqual(response.status, 500);
+        });
+    });
+
+    it('Validates order keys', function() {
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/orderTest/',
+            method: 'get',
+            body: {
+                table: 'orderTest',
+                attributes: {
+                    key: 'string'
+                },
+                order: {
+                    tid: "this_is_wronf"
+                }
+            }
+        })
+        .then(function(response) {
+            deepEqual(response.status, 500);
+        });
+    });
+
+    it('Fails to create table without attributes', function() {
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/noAttrSchema',
+            method: 'put',
+            body: {
+                domain: 'restbase.cassandra.test.local',
+                table: 'noAttrSchema'
+            }
+        })
+        .then(function(response) {
+            deepEqual(response.status, 500);
+        });
+    });
 });

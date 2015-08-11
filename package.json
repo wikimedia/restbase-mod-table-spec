@@ -1,11 +1,14 @@
 {
   "name": "restbase-mod-table-spec",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Tests and specification for RESTBase backend modules",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wikimedia/restbase-mod-table-spec.git"
+  },
+  "scripts": {
+    "test": "mocha ./test/lib/"
   },
   "keywords": [
     "restbase",
