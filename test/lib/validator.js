@@ -10,7 +10,7 @@ var validator = require('../../lib/validator');
 function extendSchemaInfo(schema) {
     // Create summary data on the primary data index
     schema.iKeys = schema.index.filter(function(elem) {
-        return elem.type === 'hash' || elem.type === 'range'
+        return elem.type === 'hash' || elem.type === 'range';
     })
     .map(function(elem) {
         return elem.attribute;
@@ -166,7 +166,7 @@ describe('Unit tests for validation methods', function() {
                         {attribute: 'tid', type: 'static'}
                     ]
                 });
-            }, /Cannot create static column in table without range keys/)
+            }, /Cannot create static column in table without range keys/);
         });
         it('invalid index names not allowed' , function() {
             test(function() {
@@ -266,7 +266,7 @@ describe('Unit tests for validation methods', function() {
             test(function() {
                 validator.validatePutRequest({
                     table: 'test'
-                }, null)
+                }, null);
             }, /Invalid query\. No schema/);
         });
 
@@ -287,7 +287,7 @@ describe('Unit tests for validation methods', function() {
             test(function() {
                 validator.validateGetRequest({
                     table: 'test'
-                }, null)
+                }, null);
             }, /Invalid query\. No schema/);
         });
 
@@ -296,7 +296,7 @@ describe('Unit tests for validation methods', function() {
                 validator.validateGetRequest({
                     table: 'test',
                     proj: [ 'some_random_proj_attr' ]
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Invalid query\. Projection /);
         });
 
@@ -307,7 +307,7 @@ describe('Unit tests for validation methods', function() {
                     attributes: {
                         body: 'sample_body'
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Invalid query\. Attribute /);
         });
 
@@ -318,7 +318,7 @@ describe('Unit tests for validation methods', function() {
                     attributes: {
                         body: undefined
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Invalid query\. Attribute /);
         });
 
@@ -329,7 +329,7 @@ describe('Unit tests for validation methods', function() {
                     attributes: {
                         key: { gt: 'test'}
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Invalid query\. Non\-eq conditions allowed only on range columns/);
         });
 
@@ -341,7 +341,7 @@ describe('Unit tests for validation methods', function() {
                         tid: { gt: 10},
                         range: { le: 'a'}
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Invalid query\. Found /);
         });
 
@@ -353,7 +353,7 @@ describe('Unit tests for validation methods', function() {
                         tid: { gt: 10},
                         range: 'a'
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Invalid query\. Found /);
         });
 
@@ -364,7 +364,7 @@ describe('Unit tests for validation methods', function() {
                     attributes: {
                         tid: { this_is_a_wrong_operator: 10}
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Illegal predicate operator/);
         });
 
@@ -375,7 +375,7 @@ describe('Unit tests for validation methods', function() {
                     order: {
                         tid: 'this-is-not-valid'
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Invalid sort order/);
         });
 
@@ -386,7 +386,7 @@ describe('Unit tests for validation methods', function() {
                     order: {
                         key: 'asc'
                     }
-                }, sampleSchema)
+                }, sampleSchema);
             }, /Cannot order on attribute/);
         });
 
@@ -396,7 +396,7 @@ describe('Unit tests for validation methods', function() {
             validator.validateGetRequest({
                 table: 'test',
                 index: 'this_does_not_exist'
-            }, sampleSchema)
+            }, sampleSchema);
         }, /Invalid query\. Index does not exist/);
     });
 });

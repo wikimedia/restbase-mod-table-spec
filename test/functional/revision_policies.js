@@ -386,7 +386,7 @@ describe('MVCC revision policy', function() {
                         comment: 'two'
                     }
                 }
-            })
+            });
         })
         .then(function(response) {
             assert.deepEqual(response.status, 201);
@@ -402,7 +402,7 @@ describe('MVCC revision policy', function() {
                         comment: 'three'
                     }
                 }
-            })
+            });
         })
             // Next day - one revision comes
         .then(function(response) {
@@ -419,7 +419,7 @@ describe('MVCC revision policy', function() {
                         comment: 'four'
                     }
                 }
-            })
+            });
         })
             // Next day tree more
         .then(function(response) {
@@ -436,7 +436,7 @@ describe('MVCC revision policy', function() {
                         comment: 'five'
                     }
                 }
-            })
+            });
         })
         .then(function(response) {
             assert.deepEqual(response.status, 201);
@@ -452,7 +452,7 @@ describe('MVCC revision policy', function() {
                         comment: 'six'
                     }
                 }
-            })
+            });
         })
         .then(function(response) {
             assert.deepEqual(response.status, 201);
@@ -468,7 +468,7 @@ describe('MVCC revision policy', function() {
                         comment: 'seven'
                     }
                 }
-            })
+            });
         })
         .delay(11000)
         .then(function(response) {
@@ -483,7 +483,7 @@ describe('MVCC revision policy', function() {
                         rev: 1000
                     }
                 }
-            })
+            });
         })
         .then(function(response) {
             assert.ok(response.body);
@@ -496,6 +496,6 @@ describe('MVCC revision policy', function() {
             assertOne(items, utils.testTidFromDate(new Date("2015-04-02 12:00:00-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-03 12:30:00-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-03 13:00:00-0500")));
-        })
+        });
     });
 });

@@ -62,7 +62,7 @@ describe('Simple tables', function() {
                 .then(function(response) {
                     deepEqual(response.status, 200);
                     deepEqual(response.body, simpleTableSchema);
-                })
+                });
             });
         });
         it('throws an error on unsupported schema update request', function() {
@@ -242,7 +242,7 @@ describe('Simple tables', function() {
                         },
                         if: {body: {"eq": new Buffer("<p>Service Oriented Architecture</p>")}}
                     }
-                })
+                });
             })
             .then(function(response) {
                 deepEqual(response, {status: 201});
@@ -265,7 +265,7 @@ describe('Simple tables', function() {
                     deepEqual(response.body.items[0].tid,
                         utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')));
                     deepEqual(response.body.items[0].body, new Buffer("<p>test<p>"));
-                })
+                });
             });
         });
         it ('does not inserts with if-condition in case condition is false', function() {
@@ -306,7 +306,7 @@ describe('Simple tables', function() {
                 utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')));
                 // The body was not modified
                 deepEqual(response.body.items[0].body, new Buffer("<p>test<p>"));
-            })
+            });
         });
         it('inserts static columns', function() {
             return router.request({
@@ -513,7 +513,7 @@ describe('Simple tables', function() {
                     uri: "/restbase.cassandra.test.local/sys/table/simple-table",
                     method: "get",
                     body: {}
-                })
+                });
             })
             .then(function(res) {
                 deepEqual(res.status, 500);
