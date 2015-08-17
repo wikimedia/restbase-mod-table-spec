@@ -71,6 +71,27 @@ var testSchemaNo2ary = {
     }
 };
 
+var testIntervalSchema = {
+    table: 'revPolicyIntervalTest',
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'desc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'interval',
+        interval: 86400,
+        count: 2,
+        grace_ttl: 10
+    }
+};
+
 describe('MVCC revision policy', function() {
     before(function() {
         return router.setup()
@@ -88,6 +109,16 @@ describe('MVCC revision policy', function() {
                     uri: '/domains_test/sys/table/' + testSchemaNo2ary.table,
                     method: 'put',
                     body: testSchemaNo2ary
+                });
+            })
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+            })
+            .then(function() {
+                return router.request({
+                    uri: '/domains_test/sys/table/' + testIntervalSchema.table,
+                    method: 'put',
+                    body: testIntervalSchema
                 });
             })
             .then(function(response) {
@@ -280,7 +311,7 @@ describe('MVCC revision policy', function() {
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:01-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:02-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:07-0500")));
-            
+
             // Before issuing the final GET, delay an additional 5 seconds for
             // the next grace_ttl to expire.
             return P.delay(5000).then(function() {
@@ -314,5 +345,150 @@ describe('MVCC revision policy', function() {
     it('sets a TTL on all but the latest N entries (no 2ary indices)', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest-no2ary');
     });
-});
 
+    // Checks interval rev retention policy: need to ensure we have max 2 renders every 24 hours
+    // We add 3 renders on first day, 1 render on second day and 3 renders on the 3rd day
+    // Renders number 1 (first one is never deleted), 3, 4, 5, 7 must survive, others should get removed
+    it('sets a TTL for interval rev policy', function() {
+        this.timeout(17000);
+        // Day 1: 3 renders come
+        return router.request({
+            uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+            method: 'put',
+            body: {
+                table: testIntervalSchema.table,
+                attributes: {
+                    title: 'Revisioned',
+                    rev: 1000,
+                    tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                    comment: 'one'
+                }
+            }
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'put',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000,
+                        tid: utils.testTidFromDate(new Date("2015-04-01 12:10:00-0500")),
+                        comment: 'two'
+                    }
+                }
+            })
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'put',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000,
+                        tid: utils.testTidFromDate(new Date("2015-04-01 12:50:00-0500")),
+                        comment: 'three'
+                    }
+                }
+            })
+        })
+            // Next day - one revision comes
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'put',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000,
+                        tid: utils.testTidFromDate(new Date("2015-04-02 12:00:00-0500")),
+                        comment: 'four'
+                    }
+                }
+            })
+        })
+            // Next day tree more
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'put',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000,
+                        tid: utils.testTidFromDate(new Date("2015-04-03 12:00:00-0500")),
+                        comment: 'five'
+                    }
+                }
+            })
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'put',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000,
+                        tid: utils.testTidFromDate(new Date("2015-04-03 12:30:00-0500")),
+                        comment: 'six'
+                    }
+                }
+            })
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'put',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000,
+                        tid: utils.testTidFromDate(new Date("2015-04-03 13:00:00-0500")),
+                        comment: 'seven'
+                    }
+                }
+            })
+        })
+        .delay(11000)
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'get',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000
+                    }
+                }
+            })
+        })
+        .then(function(response) {
+            assert.ok(response.body);
+            assert.ok(response.body.items);
+            var items = response.body.items;
+            assert.deepEqual(items.length < 7, true);
+            // According to the algo the first ever render is never deleted
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:50:00-0500")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-02 12:00:00-0500")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 12:30:00-0500")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 13:00:00-0500")));
+        })
+    });
+});
