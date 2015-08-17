@@ -139,6 +139,13 @@ describe('MVCC revision policy', function() {
                 method: 'delete',
                 body: {}
             });
+        })
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/' + testIntervalSchema.table,
+                method: 'delete',
+                body: {}
+            });
         });
     });
 
