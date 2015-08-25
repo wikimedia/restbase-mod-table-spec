@@ -207,7 +207,7 @@ describe("Multiranged tables", function() {
                 uri: "/restbase.cassandra.test.local/sys/table/multiRangeTable",
                 method: "get",
                 body: {}
-            })
+            });
         })
         .then(function(res) {
             deepEqual(res.status, 500);

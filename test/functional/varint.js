@@ -44,7 +44,7 @@ describe('Varint tables', function() {
         .then(function(result) {
             deepEqual(result.status, 200);
             deepEqual(result.body, varintTableSchema);
-        })
+        });
     });
     it('retrieves using varint predicates', function() {
         return router.request({
@@ -275,7 +275,7 @@ describe('Varint tables', function() {
                 uri: "/restbase.cassandra.test.local/sys/table/varintTable",
                 method: "get",
                 body: {}
-            })
+            });
         })
         .then(function(res) {
             deepEqual(res.status, 500);

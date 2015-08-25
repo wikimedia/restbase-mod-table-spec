@@ -391,7 +391,7 @@ describe('Indices', function() {
                 deepEqual(response.body.items[0].uri, 'uri1');
                 deepEqual(response.body.items[0].body.toString(), 'body1');
 
-            })
+            });
         });
         this.timeout(15000);
         it('successfully drop secondary index tables', function() {
@@ -406,7 +406,7 @@ describe('Indices', function() {
                     uri: "/restbase.cassandra.test.local/sys/table/simpleSecondaryIndexTable",
                     method: "get",
                     body: {}
-                })
+                });
             })
             .then(function(res) {
                 deepEqual(res.status, 500);
@@ -521,7 +521,7 @@ describe('Indices', function() {
                     uri: "/restbase.cassandra.test.local/sys/table/unversionedSecondaryIndexTable",
                     method: "get",
                     body: {}
-                })
+                });
             })
             .then(function(res) {
                 deepEqual(res.status, 500);

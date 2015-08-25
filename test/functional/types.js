@@ -225,7 +225,7 @@ describe('Types', function() {
                         },
                         proj: ['num_string']
                     }
-                })
+                });
             })
             .then(function(response) {
                 deepEqual(response.status, 200);
@@ -264,7 +264,7 @@ describe('Types', function() {
                     uri: "/restbase.cassandra.test.local/sys/table/typeTable",
                     method: "get",
                     body: {}
-                })
+                });
             })
             .then(function(res) {
                 deepEqual(res.status, 500);
@@ -449,7 +449,7 @@ describe('Types', function() {
                     uri: "/restbase.cassandra.test.local/sys/table/typeSetsTable",
                     method: "get",
                     body: {}
-                })
+                });
             })
             .then(function(res) {
                 deepEqual(res.status, 500);

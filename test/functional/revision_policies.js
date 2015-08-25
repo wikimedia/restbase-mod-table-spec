@@ -45,7 +45,7 @@ var testSchema = {
     revisionRetentionPolicy: {
         type: 'latest',
         count: 2,
-        grace_ttl: 10
+        grace_ttl: 5
     }
 };
 
@@ -67,7 +67,49 @@ var testSchemaNo2ary = {
     revisionRetentionPolicy: {
         type: 'latest',
         count: 2,
-        grace_ttl: 10
+        grace_ttl: 5
+    }
+};
+
+var testIntervalSchema2 = {
+    table: 'revPolicyIntervalTest2',
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'desc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'interval',
+        interval: 86400,
+        count: 2,
+        grace_ttl: 2
+    }
+};
+
+var testIntervalSchema = {
+    table: 'revPolicyIntervalTest',
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'desc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'interval',
+        interval: 86400,
+        count: 1,
+        grace_ttl: 2
     }
 };
 
@@ -82,12 +124,26 @@ describe('MVCC revision policy', function() {
             })
             .then(function(response) {
                 assert.deepEqual(response.status, 201);
-            })
-            .then(function() {
                 return router.request({
                     uri: '/domains_test/sys/table/' + testSchemaNo2ary.table,
                     method: 'put',
                     body: testSchemaNo2ary
+                });
+            })
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/domains_test/sys/table/' + testIntervalSchema.table,
+                    method: 'put',
+                    body: testIntervalSchema
+                });
+            })
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/domains_test/sys/table/' + testIntervalSchema2.table,
+                    method: 'put',
+                    body: testIntervalSchema2
                 });
             })
             .then(function(response) {
@@ -105,6 +161,13 @@ describe('MVCC revision policy', function() {
         .then(function() {
             return router.request({
                 uri: '/domains_test/sys/table/revPolicyLatestTest-no2ary',
+                method: 'delete',
+                body: {}
+            });
+        })
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/' + testIntervalSchema.table,
                 method: 'delete',
                 body: {}
             });
@@ -214,7 +277,7 @@ describe('MVCC revision policy', function() {
                 }
             });
         })
-        .delay(5000)
+        .delay(2500)
         .then(function(response) {
             assert.deepEqual(response, {status:201});
 
@@ -251,7 +314,7 @@ describe('MVCC revision policy', function() {
         })
         // Delay long enough for the background updates to complete, then
         // for the grace_ttl of the oldest entry to expire.
-        .delay(6000)
+        .delay(3000)
         .then(function(response) {
             // These assertions are for the GET performed immediately after the
             // 4 writes, TTL expirations may have occurred since, but these
@@ -280,10 +343,10 @@ describe('MVCC revision policy', function() {
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:01-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:02-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:07-0500")));
-            
-            // Before issuing the final GET, delay an additional 5 seconds for
+
+            // Before issuing the final GET, delay an additional 2.5 seconds for
             // the next grace_ttl to expire.
-            return P.delay(5000).then(function() {
+            return P.delay(2500).then(function() {
                 return router.request({
                     uri: '/domains_test/sys/table/'+tableName+'/',
                     method: 'get',
@@ -307,6 +370,28 @@ describe('MVCC revision policy', function() {
         });
     };
 
+    function createRenders(schema, title, revision, timestamps) {
+        var index = 1;
+        return P.each(timestamps, function(timestamp) {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ schema.table +'/',
+                method: 'put',
+                body: {
+                    table: schema.table,
+                    attributes: {
+                        title: title,
+                        rev: revision,
+                        tid: utils.testTidFromDate(timestamp),
+                        comment: '#' + (index++)
+                    }
+                }
+            })
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+            });
+        });
+    }
+
     it('sets a TTL on all but the latest N entries (w/ 2ary index)', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest');
     });
@@ -314,5 +399,90 @@ describe('MVCC revision policy', function() {
     it('sets a TTL on all but the latest N entries (no 2ary indices)', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest-no2ary');
     });
-});
 
+    // Checks interval rev retention policy: need to ensure we have max 2 renders every 24 hours
+    // We add 3 renders on first day, 1 render on third day and 3 renders on the 4th day
+    // Renders number 1 (first one is never deleted), 3, 4, 5, 7 must survive, others should get removed
+    it('sets a TTL for interval rev policy', function() {
+        this.timeout(5000);
+        return createRenders(testIntervalSchema2, "Revisioned", 1000, [
+            // Day 1: 3 renders come
+            new Date("2015-04-01 12:00:00-0000"),
+            new Date("2015-04-01 12:10:00-0000"),
+            new Date("2015-04-01 12:50:00-0000"),
+            // Next day - nothing
+            // Next day - one revision comes
+            new Date("2015-04-03 12:00:00-0000"),
+            // Next day tree more
+            new Date("2015-04-04 12:00:00-0000"),
+            new Date("2015-04-04 12:30:00-0000"),
+            new Date("2015-04-04 13:00:00-0000")
+        ])
+        .delay(2000)
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema2.table +'/',
+                method: 'get',
+                body: {
+                    table: testIntervalSchema2.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response.body);
+            assert.ok(response.body.items);
+            var items = response.body.items;
+            assert.deepEqual(items.length, 5);
+            // According to the algo the first ever render is never deleted
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:10:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:50:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 12:00:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-04 12:30:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-04 13:00:00-0000")));
+        });
+    });
+
+    // Checks if the problem with sliding beginning happens for interval policy
+    it('sets a TTL for interval rev policy', function() {
+        this.timeout(5000);
+        // Day 1: 3 renders come
+        return createRenders(testIntervalSchema, "Sliding", 1001, [
+            new Date("2015-04-01 05:00:00-0000"),
+            new Date("2015-04-01 11:00:00-0000"),
+            new Date("2015-04-01 17:00:00-0000"),
+            new Date("2015-04-01 23:00:00-0000"),
+            new Date("2015-04-02 05:00:00-0000"),
+            new Date("2015-04-02 11:00:00-0000"),
+            new Date("2015-04-02 17:00:00-0000"),
+            new Date("2015-04-02 23:00:00-0000"),
+            new Date("2015-04-03 05:00:00-0000")
+        ])
+        .delay(3000)
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'get',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Sliding',
+                        rev: 1001
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response.body);
+            assert.ok(response.body.items);
+            var items = response.body.items;
+            assert.deepEqual(items.length, 3);
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 23:00:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-02 23:00:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 05:00:00-0000")));
+        });
+    });
+});
