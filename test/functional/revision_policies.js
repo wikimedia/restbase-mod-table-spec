@@ -7,6 +7,7 @@ var P = require('bluebird');
 var router = module.parent.router;
 var assert = require('assert');
 var utils = require('../utils/test_utils.js');
+var TimeUuid = require('cassandra-uuid').TimeUuid;
 
 /** ensure a list of results contains exactly one matching entry */
 function assertOne(items, tid) {
@@ -71,8 +72,8 @@ var testSchemaNo2ary = {
     }
 };
 
-var testIntervalSchema = {
-    table: 'revPolicyIntervalTest',
+var testIntervalSchema2 = {
+    table: 'revPolicyIntervalTest2',
     attributes: {
         title: 'string',
         rev: 'int',
@@ -92,6 +93,27 @@ var testIntervalSchema = {
     }
 };
 
+var testIntervalSchema = {
+    table: 'revPolicyIntervalTest',
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'desc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'interval',
+        interval: 86400,
+        count: 1,
+        grace_ttl: 10
+    }
+};
+
 describe('MVCC revision policy', function() {
     before(function() {
         return router.setup()
@@ -103,8 +125,6 @@ describe('MVCC revision policy', function() {
             })
             .then(function(response) {
                 assert.deepEqual(response.status, 201);
-            })
-            .then(function() {
                 return router.request({
                     uri: '/domains_test/sys/table/' + testSchemaNo2ary.table,
                     method: 'put',
@@ -113,12 +133,18 @@ describe('MVCC revision policy', function() {
             })
             .then(function(response) {
                 assert.deepEqual(response.status, 201);
-            })
-            .then(function() {
                 return router.request({
                     uri: '/domains_test/sys/table/' + testIntervalSchema.table,
                     method: 'put',
                     body: testIntervalSchema
+                });
+            })
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/domains_test/sys/table/' + testIntervalSchema2.table,
+                    method: 'put',
+                    body: testIntervalSchema2
                 });
             })
             .then(function(response) {
@@ -345,6 +371,28 @@ describe('MVCC revision policy', function() {
         });
     };
 
+    function createRenders(schema, title, revision, timestamps) {
+        var index = 1;
+        return P.each(timestamps, function(timestamp) {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ schema.table +'/',
+                method: 'put',
+                body: {
+                    table: schema.table,
+                    attributes: {
+                        title: title,
+                        rev: revision,
+                        tid: utils.testTidFromDate(timestamp),
+                        comment: '#' + (index++)
+                    }
+                }
+            })
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+            });
+        });
+    }
+
     it('sets a TTL on all but the latest N entries (w/ 2ary index)', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest');
     });
@@ -354,130 +402,30 @@ describe('MVCC revision policy', function() {
     });
 
     // Checks interval rev retention policy: need to ensure we have max 2 renders every 24 hours
-    // We add 3 renders on first day, 1 render on second day and 3 renders on the 3rd day
+    // We add 3 renders on first day, 1 render on third day and 3 renders on the 4th day
     // Renders number 1 (first one is never deleted), 3, 4, 5, 7 must survive, others should get removed
     it('sets a TTL for interval rev policy', function() {
         this.timeout(17000);
-        // Day 1: 3 renders come
-        return router.request({
-            uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
-            method: 'put',
-            body: {
-                table: testIntervalSchema.table,
-                attributes: {
-                    title: 'Revisioned',
-                    rev: 1000,
-                    tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
-                    comment: 'one'
-                }
-            }
-        })
-        .then(function(response) {
-            assert.deepEqual(response.status, 201);
-            return router.request({
-                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
-                method: 'put',
-                body: {
-                    table: testIntervalSchema.table,
-                    attributes: {
-                        title: 'Revisioned',
-                        rev: 1000,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:10:00-0500")),
-                        comment: 'two'
-                    }
-                }
-            });
-        })
-        .then(function(response) {
-            assert.deepEqual(response.status, 201);
-            return router.request({
-                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
-                method: 'put',
-                body: {
-                    table: testIntervalSchema.table,
-                    attributes: {
-                        title: 'Revisioned',
-                        rev: 1000,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:50:00-0500")),
-                        comment: 'three'
-                    }
-                }
-            });
-        })
+        return createRenders(testIntervalSchema2, "Revisioned", 1000, [
+            // Day 1: 3 renders come
+            new Date("2015-04-01 12:00:00-0000"),
+            new Date("2015-04-01 12:10:00-0000"),
+            new Date("2015-04-01 12:50:00-0000"),
+            // Next day - nothing
             // Next day - one revision comes
-        .then(function(response) {
-            assert.deepEqual(response.status, 201);
-            return router.request({
-                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
-                method: 'put',
-                body: {
-                    table: testIntervalSchema.table,
-                    attributes: {
-                        title: 'Revisioned',
-                        rev: 1000,
-                        tid: utils.testTidFromDate(new Date("2015-04-02 12:00:00-0500")),
-                        comment: 'four'
-                    }
-                }
-            });
-        })
+            new Date("2015-04-03 12:00:00-0000"),
             // Next day tree more
-        .then(function(response) {
-            assert.deepEqual(response.status, 201);
-            return router.request({
-                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
-                method: 'put',
-                body: {
-                    table: testIntervalSchema.table,
-                    attributes: {
-                        title: 'Revisioned',
-                        rev: 1000,
-                        tid: utils.testTidFromDate(new Date("2015-04-03 12:00:00-0500")),
-                        comment: 'five'
-                    }
-                }
-            });
-        })
-        .then(function(response) {
-            assert.deepEqual(response.status, 201);
-            return router.request({
-                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
-                method: 'put',
-                body: {
-                    table: testIntervalSchema.table,
-                    attributes: {
-                        title: 'Revisioned',
-                        rev: 1000,
-                        tid: utils.testTidFromDate(new Date("2015-04-03 12:30:00-0500")),
-                        comment: 'six'
-                    }
-                }
-            });
-        })
-        .then(function(response) {
-            assert.deepEqual(response.status, 201);
-            return router.request({
-                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
-                method: 'put',
-                body: {
-                    table: testIntervalSchema.table,
-                    attributes: {
-                        title: 'Revisioned',
-                        rev: 1000,
-                        tid: utils.testTidFromDate(new Date("2015-04-03 13:00:00-0500")),
-                        comment: 'seven'
-                    }
-                }
-            });
-        })
+            new Date("2015-04-04 12:00:00-0000"),
+            new Date("2015-04-04 12:30:00-0000"),
+            new Date("2015-04-04 13:00:00-0000")
+        ])
         .delay(11000)
         .then(function(response) {
-            assert.deepEqual(response.status, 201);
             return router.request({
-                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                uri: '/domains_test/sys/table/'+ testIntervalSchema2.table +'/',
                 method: 'get',
                 body: {
-                    table: testIntervalSchema.table,
+                    table: testIntervalSchema2.table,
                     attributes: {
                         title: 'Revisioned',
                         rev: 1000
@@ -489,13 +437,53 @@ describe('MVCC revision policy', function() {
             assert.ok(response.body);
             assert.ok(response.body.items);
             var items = response.body.items;
-            assert.deepEqual(items.length < 7, true);
+            assert.deepEqual(items.length, 5);
             // According to the algo the first ever render is never deleted
-            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")));
-            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:50:00-0500")));
-            assertOne(items, utils.testTidFromDate(new Date("2015-04-02 12:00:00-0500")));
-            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 12:30:00-0500")));
-            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 13:00:00-0500")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:10:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:50:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 12:00:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-04 12:30:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-04 13:00:00-0000")));
+        });
+    });
+
+    // Checks if the problem with sliding beginning happens for interval policy
+    it('sets a TTL for interval rev policy', function() {
+        this.timeout(17000);
+        // Day 1: 3 renders come
+        return createRenders(testIntervalSchema, "Sliding", 1001, [
+            new Date("2015-04-01 05:00:00-0000"),
+            new Date("2015-04-01 11:00:00-0000"),
+            new Date("2015-04-01 17:00:00-0000"),
+            new Date("2015-04-01 23:00:00-0000"),
+            new Date("2015-04-02 05:00:00-0000"),
+            new Date("2015-04-02 11:00:00-0000"),
+            new Date("2015-04-02 17:00:00-0000"),
+            new Date("2015-04-02 23:00:00-0000"),
+            new Date("2015-04-03 05:00:00-0000")
+        ])
+        .delay(11000)
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
+                method: 'get',
+                body: {
+                    table: testIntervalSchema.table,
+                    attributes: {
+                        title: 'Sliding',
+                        rev: 1001
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response.body);
+            assert.ok(response.body.items);
+            var items = response.body.items;
+            assert.deepEqual(items.length, 3);
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 23:00:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-02 23:00:00-0000")));
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-03 05:00:00-0000")));
         });
     });
 });
