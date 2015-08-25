@@ -7,7 +7,6 @@ var P = require('bluebird');
 var router = module.parent.router;
 var assert = require('assert');
 var utils = require('../utils/test_utils.js');
-var TimeUuid = require('cassandra-uuid').TimeUuid;
 
 /** ensure a list of results contains exactly one matching entry */
 function assertOne(items, tid) {
@@ -46,7 +45,7 @@ var testSchema = {
     revisionRetentionPolicy: {
         type: 'latest',
         count: 2,
-        grace_ttl: 10
+        grace_ttl: 5
     }
 };
 
@@ -68,7 +67,7 @@ var testSchemaNo2ary = {
     revisionRetentionPolicy: {
         type: 'latest',
         count: 2,
-        grace_ttl: 10
+        grace_ttl: 5
     }
 };
 
@@ -89,7 +88,7 @@ var testIntervalSchema2 = {
         type: 'interval',
         interval: 86400,
         count: 2,
-        grace_ttl: 10
+        grace_ttl: 2
     }
 };
 
@@ -110,7 +109,7 @@ var testIntervalSchema = {
         type: 'interval',
         interval: 86400,
         count: 1,
-        grace_ttl: 10
+        grace_ttl: 2
     }
 };
 
@@ -278,7 +277,7 @@ describe('MVCC revision policy', function() {
                 }
             });
         })
-        .delay(5000)
+        .delay(2500)
         .then(function(response) {
             assert.deepEqual(response, {status:201});
 
@@ -315,7 +314,7 @@ describe('MVCC revision policy', function() {
         })
         // Delay long enough for the background updates to complete, then
         // for the grace_ttl of the oldest entry to expire.
-        .delay(6000)
+        .delay(3000)
         .then(function(response) {
             // These assertions are for the GET performed immediately after the
             // 4 writes, TTL expirations may have occurred since, but these
@@ -345,9 +344,9 @@ describe('MVCC revision policy', function() {
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:02-0500")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 12:00:07-0500")));
 
-            // Before issuing the final GET, delay an additional 5 seconds for
+            // Before issuing the final GET, delay an additional 2.5 seconds for
             // the next grace_ttl to expire.
-            return P.delay(5000).then(function() {
+            return P.delay(2500).then(function() {
                 return router.request({
                     uri: '/domains_test/sys/table/'+tableName+'/',
                     method: 'get',
@@ -405,7 +404,7 @@ describe('MVCC revision policy', function() {
     // We add 3 renders on first day, 1 render on third day and 3 renders on the 4th day
     // Renders number 1 (first one is never deleted), 3, 4, 5, 7 must survive, others should get removed
     it('sets a TTL for interval rev policy', function() {
-        this.timeout(17000);
+        this.timeout(5000);
         return createRenders(testIntervalSchema2, "Revisioned", 1000, [
             // Day 1: 3 renders come
             new Date("2015-04-01 12:00:00-0000"),
@@ -419,8 +418,8 @@ describe('MVCC revision policy', function() {
             new Date("2015-04-04 12:30:00-0000"),
             new Date("2015-04-04 13:00:00-0000")
         ])
-        .delay(11000)
-        .then(function(response) {
+        .delay(2000)
+        .then(function() {
             return router.request({
                 uri: '/domains_test/sys/table/'+ testIntervalSchema2.table +'/',
                 method: 'get',
@@ -449,7 +448,7 @@ describe('MVCC revision policy', function() {
 
     // Checks if the problem with sliding beginning happens for interval policy
     it('sets a TTL for interval rev policy', function() {
-        this.timeout(17000);
+        this.timeout(5000);
         // Day 1: 3 renders come
         return createRenders(testIntervalSchema, "Sliding", 1001, [
             new Date("2015-04-01 05:00:00-0000"),
@@ -462,7 +461,7 @@ describe('MVCC revision policy', function() {
             new Date("2015-04-02 23:00:00-0000"),
             new Date("2015-04-03 05:00:00-0000")
         ])
-        .delay(11000)
+        .delay(3000)
         .then(function() {
             return router.request({
                 uri: '/domains_test/sys/table/'+ testIntervalSchema.table +'/',
