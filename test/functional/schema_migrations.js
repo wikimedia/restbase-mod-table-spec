@@ -21,8 +21,7 @@ var testTable0 = {
         rev: 'int',
         tid: 'timeuuid',
         comment: 'string',
-        author: 'string',
-
+        author: 'string'
     },
     index: [
         { attribute: 'title', type: 'hash' },
@@ -40,8 +39,6 @@ var testTable0 = {
 };
 
 describe('Schema migration', function() {
-    this.timeout(20000);
-
     before(function() {
         return router.setup()
         .then(function() {
