@@ -292,6 +292,8 @@ describe('Schema migration', function() {
     it('adds one more static column', function() {
         var newSchema = clone(testTable0);
         newSchema.version = 7;
+        newSchema.attributes.added_static_column = 'string';
+        newSchema.index = [{ attribute: 'added_static_column', type: 'static' }].concat(newSchema.index);
         newSchema.attributes.added_static_column2 = 'string';
         newSchema.index = [{ attribute: 'added_static_column2', type: 'static' }].concat(newSchema.index);
         return router.request({
