@@ -6,6 +6,7 @@
 var router = module.parent.router;
 var assert = require('assert');
 var extend = require('extend');
+var utils = require('../utils/test_utils.js');
 
 function clone(obj) {
     return extend(true, {}, obj);
@@ -20,7 +21,8 @@ var testTable0 = {
         rev: 'int',
         tid: 'timeuuid',
         comment: 'string',
-        author: 'string'
+        author: 'string',
+
     },
     index: [
         { attribute: 'title', type: 'hash' },
@@ -38,6 +40,8 @@ var testTable0 = {
 };
 
 describe('Schema migration', function() {
+    this.timeout(20000);
+
     before(function() {
         return router.setup()
         .then(function() {
@@ -125,13 +129,47 @@ describe('Schema migration', function() {
             assert.deepEqual(response.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/testTable0',
-                method: 'GET',
+                method: 'GET'
             });
         })
         .then(function(response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 200);
             assert.deepEqual(response.body, newSchema);
+            // Verify that we can write to just added column
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
+                method: 'put',
+                body: {
+                    table: 'testTable0',
+                    attributes: {
+                        title: 'add_test',
+                        rev: 1,
+                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        email: 'test'
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response, 'undefined response');
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
+                method: 'get',
+                body: {
+                    table: 'testTable0',
+                    attributes: {
+                        title: 'add_test',
+                        rev: 1
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response, 'undefined response');
+            assert.deepEqual(response.status, 200);
+            assert.deepEqual(response.body.items[0].email, 'test');
         });
     });
 
@@ -176,6 +214,94 @@ describe('Schema migration', function() {
             assert.ok(
                     /is not in attributes/.test(response.body.stack),
                     'error message looks wrong');
+        });
+    });
+
+    it('handles adding static columns', function() {
+        var newSchema = clone(testTable0);
+        newSchema.version = 6;
+        newSchema.attributes.added_static_column = 'string';
+        newSchema.index = [{ attribute: 'added_static_column', type: 'static' }].concat(newSchema.index);
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/testTable0',
+            method: 'put',
+            body: newSchema
+        })
+        .then(function(response) {
+            assert.ok(response);
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0',
+                method: 'GET'
+            });
+        })
+        .then(function(response) {
+            assert.deepEqual(response.body, newSchema);
+            // Also test that column is indeed static
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
+                method: 'put',
+                body: {
+                    table: 'testTable0',
+                    attributes: {
+                        title: 'test',
+                        rev: 1,
+                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        added_static_column: 'test1'
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response, 'undefined response');
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
+                method: 'put',
+                body: {
+                    table: 'testTable0',
+                    attributes: {
+                        title: 'test',
+                        rev: 2,
+                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        added_static_column: 'test2'
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response, 'undefined response');
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
+                method: 'get',
+                body: {
+                    table: 'testTable0',
+                    attributes: {
+                        title: 'test',
+                        rev: 1
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response, 'undefined response');
+            assert.deepEqual(response.status, 200);
+            assert.deepEqual(response.body.items[0].added_static_column, 'test2');
+        });
+    });
+
+    it('does not change static index on existing column', function() {
+        var newSchema = clone(testTable0);
+        newSchema.version = 7;
+        newSchema.index = [{attribute: 'not_static', type: 'static'}].concat(newSchema.index);
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/testTable0',
+            method: 'put',
+            body: newSchema
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 500);
         });
     });
 });

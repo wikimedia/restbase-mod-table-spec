@@ -392,7 +392,7 @@ describe('MVCC revision policy', function() {
         });
     }
 
-    it('sets a TTL on all but the latest N entries (w/ 2ary index)', function() {
+/*    it('sets a TTL on all but the latest N entries (w/ 2ary index)', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest');
     });
 
@@ -484,5 +484,5 @@ describe('MVCC revision policy', function() {
             assertOne(items, utils.testTidFromDate(new Date("2015-04-02 23:00:00-0000")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-03 05:00:00-0000")));
         });
-    });
+    });*/
 });
