@@ -218,7 +218,7 @@ describe('Schema migration', function() {
         var newSchema = clone(testTable0);
         newSchema.version = 6;
         newSchema.attributes.added_static_column = 'string';
-        newSchema.index = [{ attribute: 'added_static_column', type: 'static' }].concat(newSchema.index);
+        newSchema.index.push({ attribute: 'added_static_column', type: 'static' });
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/testTable0',
             method: 'put',
@@ -293,9 +293,9 @@ describe('Schema migration', function() {
         var newSchema = clone(testTable0);
         newSchema.version = 7;
         newSchema.attributes.added_static_column = 'string';
-        newSchema.index = [{ attribute: 'added_static_column', type: 'static' }].concat(newSchema.index);
+        newSchema.index.push({ attribute: 'added_static_column', type: 'static' });
         newSchema.attributes.added_static_column2 = 'string';
-        newSchema.index = [{ attribute: 'added_static_column2', type: 'static' }].concat(newSchema.index);
+        newSchema.index.push({ attribute: 'added_static_column2', type: 'static' });
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/testTable0',
             method: 'put',
@@ -368,7 +368,7 @@ describe('Schema migration', function() {
     it('does not change static index on existing column', function() {
         var newSchema = clone(testTable0);
         newSchema.version = 8;
-        newSchema.index = [{attribute: 'not_static', type: 'static'}].concat(newSchema.index);
+        newSchema.index.push({attribute: 'not_static', type: 'static'});
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/testTable0',
             method: 'put',
