@@ -45,6 +45,18 @@ describe('Simple tables', function() {
     };
 
     context('Create', function() {
+        before(function() {
+            // Create a same table on different domain
+            return router.request({
+                uri: '/restbase1.cassandra.test.local/sys/table/simple-table',
+                method: 'put',
+                body: simpleTableSchema
+            })
+            .then(function(response) {
+                deepEqual(response.status, 201);
+            });
+        });
+
         it('creates a simple test table', function() {
             this.timeout(15000);
             return router.request({
@@ -495,6 +507,67 @@ describe('Simple tables', function() {
                     'content-location': null,
                     restrictions: null,
                 }]);
+            });
+        });
+
+        it('honors request domain', function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                method: 'put',
+                body: {
+                    table: "simple-table",
+                    attributes: {
+                        key: "domain test",
+                        tid: utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700'))
+                    }
+                }
+            })
+            .then(function(response) {
+                deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase1.cassandra.test.local/sys/table/simple-table/',
+                    method: 'put',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "domain test",
+                            tid: utils.testTidFromDate(new Date('2014-08-11 18:43:58-0700'))
+                        }
+                    }
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "domain test"
+                        }
+                    }
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 200);
+                deepEqual(response.body.items[0].tid,
+                    utils.testTidFromDate(new Date('2013-08-11 18:43:58-0700')));
+                return router.request({
+                    uri: '/restbase1.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: "simple-table",
+                        attributes: {
+                            key: "domain test"
+                        }
+                    }
+                });
+            })
+            .then(function(response) {
+                deepEqual(response.status, 200);
+                deepEqual(response.body.items[0].tid,
+                    utils.testTidFromDate(new Date('2014-08-11 18:43:58-0700')));
             });
         });
     });
