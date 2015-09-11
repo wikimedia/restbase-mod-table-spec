@@ -421,6 +421,6 @@ describe('Schema migration', function() {
         })
         .then(function(response) {
             assert.deepEqual(response.status, 201);
-        })
+        });
     });
 });
