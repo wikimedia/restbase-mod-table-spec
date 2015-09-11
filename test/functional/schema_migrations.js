@@ -378,4 +378,49 @@ describe('Schema migration', function() {
             assert.deepEqual(response.status, 500);
         });
     });
+
+    // We can't add a secondary index back, so this test must be last in the test set.
+    it('removes a secondary index', function() {
+        var newSchema = clone(testTable0);
+        newSchema.version = 9;
+        delete newSchema.secondaryIndexes.by_rev;
+        return router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/testTable0',
+            method: 'put',
+            body: newSchema
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
+                method: 'get',
+                body: {
+                    table: 'testTable0',
+                    index: 'by_rev',
+                    attributes: {
+                        rev: 1
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 500);
+            // And check that the table is still usable and index updates didn't break
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
+                method: 'put',
+                body: {
+                    table: 'testTable0',
+                    attributes: {
+                        title: 'add_test',
+                        rev: 111,
+                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500"))
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.deepEqual(response.status, 201);
+        });
+    });
 });
