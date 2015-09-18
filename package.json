@@ -1,6 +1,6 @@
 {
   "name": "restbase-mod-table-spec",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Tests and specification for RESTBase backend modules",
   "main": "index.js",
   "repository": {
@@ -37,7 +37,9 @@
     "js-yaml": "^3.2.5"
   },
   "devDependencies": {
+    "bluebird": "~2.8.2",
     "coveralls": "2.11.2",
+    "extend": "^2.0.0",
     "istanbul": "0.3.5",
     "mocha-lcov-reporter": "0.0.1",
     "mocha": "x.x.x",
