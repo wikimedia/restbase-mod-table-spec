@@ -155,4 +155,40 @@ describe('Invalid request handling', function() {
             deepEqual(response.status, 500);
         });
     });
+
+    it('fails to insert unknown field', function() {
+        return router.request({
+            method: 'put',
+            uri: '/restbase.cassandra.test.local/sys/table/extraFieldSchema',
+            body: {
+                domain: 'restbase.cassandra.test.local',
+                table: 'extraFieldSchema',
+                attributes: {
+                    key: 'string',
+                    value: 'string'
+                },
+                index: [
+                    { attribute: 'key', type: 'hash' }
+                ]
+            }
+        })
+        .then(function(res) {
+            deepEqual(res.status, 201);
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/extraFieldSchema/',
+                method: 'put',
+                body: {
+                    table: 'extraFieldSchema',
+                    attributes: {
+                        key: 'key',
+                        value: 'value',
+                        extra_field: 'extra_value'
+                    }
+                }
+            });
+        })
+        .then(function(res) {
+            deepEqual(res.status, 500);
+        });
+    });
 });
