@@ -280,6 +280,21 @@ describe('Unit tests for validation methods', function() {
                 }, sampleSchema);
             }, /Index attribute/);
         });
+
+        it('all attributes must exist in schema', function() {
+            test(function() {
+                validator.validatePutRequest({
+                    table: 'test',
+                    attributes: {
+                        key: 'key',
+                        tid: 'timeuuid',
+                        latestTid: 'timeuuid',
+                        range: 'string',
+                        extra_column: 'extra'
+                    }
+                }, sampleSchema);
+            }, /Unknown attribute extra_column/);
+        });
     });
 
     describe('GET request validation', function() {
