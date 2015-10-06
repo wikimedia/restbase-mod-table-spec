@@ -49,6 +49,28 @@ var testSchema = {
     }
 };
 
+var testSchemaZeroRevisions = {
+    table: 'testSchemaZeroRevisions',
+    options: { durability: 'low' },
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string',
+        author: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'desc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'latest',
+        count: 0,
+        grace_ttl: 3
+    }
+};
+
 var testSchemaNo2ary = {
     table: 'revPolicyLatestTest-no2ary',
     options: { durability: 'low' },
@@ -117,61 +139,37 @@ describe('MVCC revision policy', function() {
     before(function() {
         return router.setup()
         .then(function() {
-            return router.request({
-                uri: '/domains_test/sys/table/' + testSchema.table,
-                method: 'put',
-                body: testSchema
-            })
-            .then(function(response) {
-                assert.deepEqual(response.status, 201);
+            return P.all([testSchema,
+                testSchemaNo2ary,
+                testIntervalSchema,
+                testIntervalSchema2,
+                testSchemaZeroRevisions]
+            .map(function(schema) {
                 return router.request({
-                    uri: '/domains_test/sys/table/' + testSchemaNo2ary.table,
+                    uri: '/domains_test/sys/table/' + schema.table,
                     method: 'put',
-                    body: testSchemaNo2ary
+                    body: schema
+                })
+                .then(function(response) {
+                    assert.deepEqual(response.status, 201);
                 });
-            })
-            .then(function(response) {
-                assert.deepEqual(response.status, 201);
-                return router.request({
-                    uri: '/domains_test/sys/table/' + testIntervalSchema.table,
-                    method: 'put',
-                    body: testIntervalSchema
-                });
-            })
-            .then(function(response) {
-                assert.deepEqual(response.status, 201);
-                return router.request({
-                    uri: '/domains_test/sys/table/' + testIntervalSchema2.table,
-                    method: 'put',
-                    body: testIntervalSchema2
-                });
-            })
-            .then(function(response) {
-                assert.deepEqual(response.status, 201);
-            });
+            }));
         });
     });
 
     after(function() {
-        return router.request({
-            uri: '/domains_test/sys/table/revPolicyLatestTest',
-            method: 'delete',
-            body: {}
-        })
-        .then(function() {
+        return P.all([testSchema,
+            testSchemaNo2ary,
+            testIntervalSchema,
+            testIntervalSchema2,
+            testSchemaZeroRevisions]
+        .map(function(schema) {
             return router.request({
-                uri: '/domains_test/sys/table/revPolicyLatestTest-no2ary',
+                uri: '/domains_test/sys/table/' + schema.table,
                 method: 'delete',
                 body: {}
             });
-        })
-        .then(function() {
-            return router.request({
-                uri: '/domains_test/sys/table/' + testIntervalSchema.table,
-                method: 'delete',
-                body: {}
-            });
-        });
+        }));
     });
 
     /* This is... tricky.
@@ -398,6 +396,49 @@ describe('MVCC revision policy', function() {
 
     it('sets a TTL on all but the latest N entries (no 2ary indices)', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest-no2ary');
+    });
+
+    it('supports count=0 in latests policy', function() {
+        this.timeout(10000);
+
+        return P.each([1,2,3], function(index) {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testSchemaZeroRevisions.table +'/',
+                method: 'put',
+                body: {
+                    table: testSchemaZeroRevisions.table,
+                    attributes: {
+                        title: 'revisioned',
+                        rev: 1000,
+                        tid: utils.testTidFromDate(new Date()),
+                        comment: '#' + (index++)
+                    }
+                }
+            })
+            .delay(100)
+            .then(function(response) {
+                assert.deepEqual(response.status, 201);
+            });
+        })
+        .delay(5000)
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testSchemaZeroRevisions.table +'/',
+                method: 'get',
+                body: {
+                    table: testSchemaZeroRevisions.table,
+                    attributes: {
+                        title: 'Revisioned',
+                        rev: 1000
+                    }
+                }
+            });
+        })
+        .then(function(res) {
+            assert.deepEqual(res.status, 404);
+            assert.ok(res.body);
+            assert.deepEqual(res.body.items.length, 0);
+        })
     });
 
     // Checks interval rev retention policy: need to ensure we have max 2 renders every 24 hours
