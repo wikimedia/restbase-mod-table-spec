@@ -438,7 +438,7 @@ describe('MVCC revision policy', function() {
             assert.deepEqual(res.status, 404);
             assert.ok(res.body);
             assert.deepEqual(res.body.items.length, 0);
-        })
+        });
     });
 
     // Checks interval rev retention policy: need to ensure we have max 2 renders every 24 hours
