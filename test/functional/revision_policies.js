@@ -398,7 +398,7 @@ describe('MVCC revision policy', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest-no2ary');
     });
 
-    it('supports count=0 in latests policy', function() {
+    it('supports count=0 in latest policy', function() {
         this.timeout(10000);
 
         return P.each([1,2,3], function(index) {
