@@ -49,8 +49,8 @@ var testSchema = {
     }
 };
 
-var testSchemaTempPolicy = {
-    table: 'testSchemaTempPolicy',
+var testSchemaTtlPolicy = {
+    table: 'testSchemaTtlPolicy',
     options: { durability: 'low' },
     attributes: {
         title: 'string',
@@ -65,8 +65,8 @@ var testSchemaTempPolicy = {
         { attribute: 'tid', type: 'range', order: 'desc' }
     ],
     revisionRetentionPolicy: {
-        type: 'temp',
-        grace_ttl: 3
+        type: 'ttl',
+        ttl: 3
     }
 };
 
@@ -142,7 +142,7 @@ describe('MVCC revision policy', function() {
                 testSchemaNo2ary,
                 testIntervalSchema,
                 testIntervalSchema2,
-                testSchemaTempPolicy]
+                testSchemaTtlPolicy]
             .map(function(schema) {
                 return router.request({
                     uri: '/domains_test/sys/table/' + schema.table,
@@ -161,7 +161,7 @@ describe('MVCC revision policy', function() {
             testSchemaNo2ary,
             testIntervalSchema,
             testIntervalSchema2,
-            testSchemaTempPolicy]
+            testSchemaTtlPolicy]
         .map(function(schema) {
             return router.request({
                 uri: '/domains_test/sys/table/' + schema.table,
@@ -402,10 +402,10 @@ describe('MVCC revision policy', function() {
 
         return P.each([1,2,3], function(index) {
             return router.request({
-                uri: '/domains_test/sys/table/'+ testSchemaTempPolicy.table +'/',
+                uri: '/domains_test/sys/table/'+ testSchemaTtlPolicy.table +'/',
                 method: 'put',
                 body: {
-                    table: testSchemaTempPolicy.table,
+                    table: testSchemaTtlPolicy.table,
                     attributes: {
                         title: 'revisioned',
                         rev: 1000,
@@ -422,10 +422,10 @@ describe('MVCC revision policy', function() {
         .delay(5000)
         .then(function() {
             return router.request({
-                uri: '/domains_test/sys/table/'+ testSchemaTempPolicy.table +'/',
+                uri: '/domains_test/sys/table/'+ testSchemaTtlPolicy.table +'/',
                 method: 'get',
                 body: {
-                    table: testSchemaTempPolicy.table,
+                    table: testSchemaTtlPolicy.table,
                     attributes: {
                         title: 'Revisioned',
                         rev: 1000

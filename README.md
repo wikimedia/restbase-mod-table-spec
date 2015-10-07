@@ -101,9 +101,9 @@ When `revisionRetentionPolicy.type` is `interval`, each `revisionRetentionPolicy
 items are maintained each `revisionRetentionPolicy.interval` milliseconds.
 Removed items expire no less than `revisionRetentionPolicy.grace_ttl` seconds.
 
-### temp
-When `revisionRetentionPolicy.type` is `temp`, all items are maintained only for
-`revisionRetentionPolicy.grace_ttl` seconds, and expire after that period.
+### ttl
+When `revisionRetentionPolicy.type` is `ttl`, all items are maintained no less than for
+`revisionRetentionPolicy.ttl` seconds, and expire after that period.
 
 # Queries
 Select the first 50 entries:
