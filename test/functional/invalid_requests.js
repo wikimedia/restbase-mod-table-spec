@@ -6,9 +6,19 @@
 var router = module.parent.router;
 var utils = require('../utils/test_utils.js');
 var deepEqual = utils.deepEqual;
+var P = require('bluebird');
 
 describe('Invalid request handling', function() {
     before(function () { return router.setup(); });
+
+    after(function() {
+        return P.all(['extraFieldSchema', 'orderTest'].map(function(schemaName) {
+            return router.request({
+                method: 'delete',
+                uri: '/restbase.cassandra.test.local/sys/table/' + schemaName
+            });
+        }));
+    });
 
     it('fails when writing to non-existent table', function() {
         return router.request({
