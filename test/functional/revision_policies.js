@@ -49,8 +49,8 @@ var testSchema = {
     }
 };
 
-var testSchemaZeroRevisions = {
-    table: 'testSchemaZeroRevisions',
+var testSchemaTempPolicy = {
+    table: 'testSchemaTempPolicy',
     options: { durability: 'low' },
     attributes: {
         title: 'string',
@@ -65,8 +65,7 @@ var testSchemaZeroRevisions = {
         { attribute: 'tid', type: 'range', order: 'desc' }
     ],
     revisionRetentionPolicy: {
-        type: 'latest',
-        count: 0,
+        type: 'temp',
         grace_ttl: 3
     }
 };
@@ -143,7 +142,7 @@ describe('MVCC revision policy', function() {
                 testSchemaNo2ary,
                 testIntervalSchema,
                 testIntervalSchema2,
-                testSchemaZeroRevisions]
+                testSchemaTempPolicy]
             .map(function(schema) {
                 return router.request({
                     uri: '/domains_test/sys/table/' + schema.table,
@@ -162,7 +161,7 @@ describe('MVCC revision policy', function() {
             testSchemaNo2ary,
             testIntervalSchema,
             testIntervalSchema2,
-            testSchemaZeroRevisions]
+            testSchemaTempPolicy]
         .map(function(schema) {
             return router.request({
                 uri: '/domains_test/sys/table/' + schema.table,
@@ -398,15 +397,15 @@ describe('MVCC revision policy', function() {
         return revisionRetentionTest(this, 'revPolicyLatestTest-no2ary');
     });
 
-    it('supports count=0 in latest policy', function() {
+    it('supports temp revision policy', function() {
         this.timeout(10000);
 
         return P.each([1,2,3], function(index) {
             return router.request({
-                uri: '/domains_test/sys/table/'+ testSchemaZeroRevisions.table +'/',
+                uri: '/domains_test/sys/table/'+ testSchemaTempPolicy.table +'/',
                 method: 'put',
                 body: {
-                    table: testSchemaZeroRevisions.table,
+                    table: testSchemaTempPolicy.table,
                     attributes: {
                         title: 'revisioned',
                         rev: 1000,
@@ -423,10 +422,10 @@ describe('MVCC revision policy', function() {
         .delay(5000)
         .then(function() {
             return router.request({
-                uri: '/domains_test/sys/table/'+ testSchemaZeroRevisions.table +'/',
+                uri: '/domains_test/sys/table/'+ testSchemaTempPolicy.table +'/',
                 method: 'get',
                 body: {
-                    table: testSchemaZeroRevisions.table,
+                    table: testSchemaTempPolicy.table,
                     attributes: {
                         title: 'Revisioned',
                         rev: 1000
