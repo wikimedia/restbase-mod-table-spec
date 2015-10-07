@@ -96,6 +96,15 @@ When `revisionRetentionPolicy.type` is `latest`, the last
 `revisionRetentionPolicy.count` records are maintained, any others are
 expired in no less than `revisionRetentionPolicy.grace_ttl` seconds.
 
+### interval
+When `revisionRetentionPolicy.type` is `interval`, each `revisionRetentionPolicy.count`
+items are maintained each `revisionRetentionPolicy.interval` milliseconds.
+Removed items expire no less than `revisionRetentionPolicy.grace_ttl` seconds.
+
+### temp
+When `revisionRetentionPolicy.type` is `temp`, all items are maintained only for
+`revisionRetentionPolicy.grace_ttl` seconds, and expire after that period.
+
 # Queries
 Select the first 50 entries:
 
