@@ -57,8 +57,7 @@ describe('Schema migration', function() {
     after(function() {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/testTable0',
-            method: 'DELETE',
-            body: {}
+            method: 'delete'
         });
     });
 

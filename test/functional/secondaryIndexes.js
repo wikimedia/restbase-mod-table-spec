@@ -81,6 +81,13 @@ describe('Indices', function() {
         }
     };
 
+    after(function() {
+        router.request({
+            uri: '/restbase.cassandra.test.local/sys/table/secondaryIndexSchemaWithRangeKeys',
+            method: 'delete'
+        });
+    });
+
     context('Secondary indices', function() {
         it('creates a secondary index table', function() {
             this.timeout(15000);

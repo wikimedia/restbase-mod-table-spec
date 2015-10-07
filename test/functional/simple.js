@@ -44,6 +44,13 @@ describe('Simple tables', function() {
         ]
     };
 
+    after(function() {
+        return router.request({
+            uri: '/restbase1.cassandra.test.local/sys/table/simple-table',
+            method: 'delete'
+        });
+    });
+
     context('Create', function() {
         before(function() {
             // Create a same table on different domain
