@@ -31,7 +31,8 @@ describe('Types', function() {
             uuid: 'uuid',
             timestamp: 'timestamp',
             json: 'json',
-            num_string: 'string' // String containing a `numeric` value to check it's not converted to number
+            num_string: 'string', // String containing a `numeric` value to check it's not converted to number
+            long: 'long'
         },
         index: [
             { attribute: 'string', type: 'hash' },
@@ -65,6 +66,20 @@ describe('Types', function() {
         },
         index: [
             { attribute: 'string', type: 'hash' },
+        ]
+    };
+    var longRangeKeyTableSpec = {
+        domain: 'restbase.cassandra.test.local',
+        table: 'longRangeKeyTable',
+        options: { durability: 'low' },
+        attributes: {
+            string: 'string',
+            long: 'long',
+            value: 'string'
+        },
+        index: [
+            { attribute: 'string', type: 'hash' },
+            { attribute: 'long', type: 'range', order: 'desc' }
         ]
     };
 
@@ -110,7 +125,8 @@ describe('Types', function() {
                         timestamp: '2014-11-14T19:10:40.912Z',
                         json: {
                             foo: 'bar'
-                        }
+                        },
+                        long: '9223372036854775807'
                     }
                 }
             })
@@ -139,7 +155,8 @@ describe('Types', function() {
                         timestamp: '2014-11-14T19:10:40.912Z',
                         json: {
                             foo: 'bar'
-                        }
+                        },
+                        long: '9223372036854775806'
                     }
                 }
             })
@@ -158,7 +175,7 @@ describe('Types', function() {
                     },
                     proj: ['string','blob','set','int','varint', 'decimal',
                             'float', 'double','boolean','timeuuid','uuid',
-                            'timestamp','json']
+                            'timestamp','json', 'long']
                 }
             })
             .then(function(response){
@@ -179,7 +196,8 @@ describe('Types', function() {
                     timestamp: '2014-11-14T19:10:40.912Z',
                     json: {
                         foo: 'bar'
-                    }
+                    },
+                    long: '9223372036854775806'
                 },{
                     string: 'string',
                     blob: new Buffer('blob'),
@@ -195,7 +213,8 @@ describe('Types', function() {
                     timestamp: '2014-11-14T19:10:40.912Z',
                     json: {
                         foo: 'bar'
-                    }
+                    },
+                    long: '9223372036854775807'
                 }]);
             });
         });
@@ -251,6 +270,62 @@ describe('Types', function() {
                 response.body.items[0].boolean = true;
             });
         });
+        it('supports comparing longs', function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/' + longRangeKeyTableSpec.table,
+                method: 'put',
+                body: longRangeKeyTableSpec
+            })
+            .then(function(res) {
+                deepEqual(res.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/' + longRangeKeyTableSpec.table + '/',
+                    method: 'put',
+                    body: {
+                        table: longRangeKeyTableSpec.table,
+                        attributes: {
+                            string: 'key',
+                            long: '9223372036854775807',
+                            value: 'value1'
+                        }
+                    }
+                });
+            })
+            .then(function(res) {
+                deepEqual(res.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/' + longRangeKeyTableSpec.table + '/',
+                    method: 'put',
+                    body: {
+                        table: longRangeKeyTableSpec.table,
+                        attributes: {
+                            string: 'key',
+                            long: '10',
+                            value: 'value2'
+                        }
+                    }
+                });
+            })
+            .then(function(res) {
+                deepEqual(res.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/' + longRangeKeyTableSpec.table + '/',
+                    method: 'get',
+                    body: {
+                        table: longRangeKeyTableSpec.table,
+                        attributes: {
+                            string: 'key',
+                            long: { ge: '20' }
+                        }
+                    }
+                });
+            })
+            .then(function(res) {
+                deepEqual(res.status, 200);
+                deepEqual(res.body.items.length, 1);
+                deepEqual(res.body.items[0].value, 'value1');
+            });
+        });
         it('drops table', function() {
             this.timeout(15000);
             return router.request({
@@ -268,6 +343,11 @@ describe('Types', function() {
             })
             .then(function(res) {
                 deepEqual(res.status, 500);
+                return router.request({
+                    uri: "/restbase.cassandra.test.local/sys/table/" + longRangeKeyTableSpec.table,
+                    method: "delete",
+                    body: {}
+                });
             });
         });
     });

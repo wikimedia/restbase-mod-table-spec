@@ -60,6 +60,8 @@ Example:
   implementation decodes JSON to doubles, this is also the maximum range the
   we currently support in practice. We might add support for an alternative
   JSON string representation of larger integers in the future.
+- `long`: A 64-bit signed long. Javascript only represents 52 bits in its `Number`
+   type, so longs should be represented as strings in clients.
 - `decimal`: Decimal number.
 - `float`: Single-precision (32-bit) floating point number.
 - `double`: Double-precision (64-bit) floating point number.
