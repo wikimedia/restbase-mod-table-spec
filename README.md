@@ -107,6 +107,14 @@ Removed items expire no less than `revisionRetentionPolicy.grace_ttl` seconds.
 When `revisionRetentionPolicy.type` is `ttl`, all items are maintained no less than for
 `revisionRetentionPolicy.ttl` seconds, and expire after that period.
 
+## Custom TTL
+A custom TTL can be set for individual objects on `PUT` requests by providing a special
+`_ttl` integer attribute. Its value indicates the amount of time (in seconds) after which
+the record will be removed from storage.
+
+Please note, that setting custom `_ttl` for individual rows is not allowed for tables which
+have a revision retention policy set, as table-wide and row-wide TTLs would conflict.
+
 # Queries
 Select the first 50 entries:
 
