@@ -126,6 +126,8 @@ describe('Simple tables', function() {
     });
 
     context('Put', function() {
+        this.timeout(15000);
+
         it('inserts a row', function() {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
@@ -373,6 +375,54 @@ describe('Simple tables', function() {
             })
             .then(function(response) {
                 deepEqual(response, {status: 201});
+            });
+        });
+        it('allows setting TTL for individual rows', function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                method: 'put',
+                body: {
+                    table: 'simple-table',
+                    attributes: {
+                        key: 'ttl_test',
+                        tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
+                        body: new Buffer("<p>test<p>"),
+                        _ttl: 3
+                    }
+                }
+            })
+            .then(function(res) {
+                deepEqual(res.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'ttl_test'
+                        }
+                    }
+                });
+            })
+            .then(function(res) {
+                deepEqual(res.status, 200);
+                deepEqual(res.body.items.length, 1);
+            })
+            .delay(5000)
+            .then(function() {
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'ttl_test'
+                        }
+                    }
+                });
+            })
+            .then(function(res) {
+                deepEqual(res.status, 404);
             });
         });
     });
