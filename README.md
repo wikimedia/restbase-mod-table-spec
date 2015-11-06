@@ -115,6 +115,27 @@ the record will be removed from storage.
 Please note, that setting custom `_ttl` for individual rows is not allowed for tables which
 have a revision retention policy set, as table-wide and row-wide TTLs would conflict.
 
+
+# Options
+
+The `option` attribute can be used to tune the storage behavior. Example:
+
+```javascript
+options: {
+  // Indicate a preference of compression algorithms and parameters, most
+  // preferred first.
+  compression: [{
+    algorithm: 'snappy', // 'lz4' (default), 'deflate', 'snappy'
+    block_size: 1024, // powers of two 64 .. 1024
+  }],
+  // Describe the primary update behavior, to allow backends to tune
+  // parameters. In Cassandra, this affects the compaction strategy.
+  updates: {
+    pattern: 'timeseries' // or: 'write-once', 'random-update' (default)
+  }
+}
+```
+
 # Queries
 Select the first 50 entries:
 
