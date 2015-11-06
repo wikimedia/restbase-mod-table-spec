@@ -128,6 +128,15 @@ options: {
 }
 ```
 
+## Update patterns: `updates`
+
+- `random-update` (default): Robust support for random writes, updates and deletions,
+    but might not perform as well as some of the other options.
+- `write-once`: Most data is only written once, and there are few deletions.
+- `timeseries`: Write order correlates strongly with range index order. A
+    typical use case would be timeseries data, with a timestamp or revision id
+    as the first range index element.
+
 # Queries
 Select the first 50 entries:
 
