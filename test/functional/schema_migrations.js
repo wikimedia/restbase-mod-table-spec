@@ -105,7 +105,7 @@ describe('Schema migration', function() {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 400);
             assert.ok(
-                /version must be higher/.test(response.body.title),
+                /version must be higher|but no version increment/.test(response.body.title),
                 'error message looks wrong');
         });
     });
