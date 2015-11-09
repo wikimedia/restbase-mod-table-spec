@@ -259,6 +259,42 @@ describe('Unit tests for validation methods', function() {
                 });
             }, /count must be a number/);
         });
+        it('options.compression must be an array' , function() {
+            test(function() {
+                validator.validateAndNormalizeSchema({
+                    table: 'test',
+                    attributes: {
+                        key: 'string',
+                        tid: 'timeuuid'
+                    },
+                    index: [
+                        {attribute: 'key', type: 'hash'},
+                        {attribute: 'tid', type: 'range', order: 'desc'}
+                    ],
+                    options: {
+                        compression: 'invalid-value'
+                    }
+                });
+            }, /Invalid option value/);
+        });
+        it('options.updates is filled in' , function() {
+            var schema = validator.validateAndNormalizeSchema({
+                table: 'test',
+                attributes: {
+                    key: 'string',
+                    tid: 'timeuuid'
+                },
+                index: [
+                    {attribute: 'key', type: 'hash'},
+                    {attribute: 'tid', type: 'range', order: 'desc'}
+                ],
+            });
+            deepEqual(schema.options, {
+                updates: {
+                    pattern: 'random-update',
+                }
+            });
+        });
     });
 
     describe('PUT request validation', function() {
