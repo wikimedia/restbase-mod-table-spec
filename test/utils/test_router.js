@@ -17,6 +17,10 @@ router.request = function(req) {
         if (handler) {
             return handler({}, req)
             .then(function(item){
+                // TODO: return HTTPError?
+                //if (item.status >= 400) {
+                //    console.log(item);
+                //}
                 return item;
             });
         } else {
