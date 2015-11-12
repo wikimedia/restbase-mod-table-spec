@@ -25,7 +25,7 @@
     "cassandra"
   ],
   "author": "Wikimedia Service Team <services@wikimedia.org>",
-  "license": "Apache2",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://phabricator.wikimedia.org/tag/restbase/"
   },
