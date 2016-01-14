@@ -427,7 +427,7 @@ describe('MVCC revision policy', function() {
                 body: {
                     table: testSchemaTtlPolicy.table,
                     attributes: {
-                        title: 'Revisioned',
+                        title: 'revisioned',
                         rev: 1000
                     }
                 }
