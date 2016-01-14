@@ -53,15 +53,7 @@ var testTableNoRevPolicy = {
         { attribute: 'title', type: 'hash' },
         { attribute: 'rev', type: 'range', order: 'desc' },
         { attribute: 'tid', type: 'range', order: 'desc' }
-    ],
-    secondaryIndexes: {
-        by_rev : [
-            { attribute: 'rev', type: 'hash' },
-            { attribute: 'tid', type: 'range', order: 'desc' },
-            { attribute: 'title', type: 'range', order: 'asc' },
-            { attribute: 'comment', type: 'proj' }
-        ]
-    }
+    ]
 };
 
 describe('Schema migration', function() {
@@ -258,9 +250,9 @@ describe('Schema migration', function() {
        on tables where the static column was added, which affects our revision
        retention policy code. This test will fail on cassandra < 2.2.*, so for now
        it's commented out. When we start requiring newer cassandra version, this
-       should be uncommented.
+       should be uncommented. */
 
-    it('adds static columns with rev policy', function() {
+    it.skip('adds static columns with rev policy', function() {
         var newSchema = clone(testTable0);
         newSchema.version = 6;
         newSchema.attributes.added_static_column = 'string';
@@ -333,7 +325,6 @@ describe('Schema migration', function() {
             assert.deepEqual(response.body.items[0].added_static_column, 'test2');
         });
     });
-    */
 
     /* This test duplicates the previous commented-out one with a difference
        that it's run on a table without a revision retention policy.
