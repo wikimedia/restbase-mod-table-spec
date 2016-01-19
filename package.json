@@ -1,6 +1,6 @@
 {
   "name": "restbase-mod-table-spec",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Tests and specification for RESTBase backend modules",
   "main": "index.js",
   "repository": {
@@ -31,18 +31,18 @@
   },
   "homepage": "https://github.com/wikimedia/restbase-mod-table-spec",
   "dependencies": {
-    "core-js": "^0.9.18",
+    "core-js": "^2.0.3",
     "routeswitch": "~0.6.3",
     "cassandra-uuid": "^0.0.2",
-    "js-yaml": "^3.2.5"
+    "js-yaml": "^3.5.2"
   },
   "devDependencies": {
-    "bluebird": "~2.8.2",
-    "coveralls": "2.11.2",
-    "extend": "^2.0.0",
-    "istanbul": "0.3.5",
-    "mocha-lcov-reporter": "0.0.1",
-    "mocha": "x.x.x",
-    "mocha-jshint": "0.0.9"
+    "bluebird": "~3.1.1",
+    "coveralls": "2.11.6",
+    "extend": "^3.0.0",
+    "istanbul": "0.4.2",
+    "mocha-lcov-reporter": "1.0.0",
+    "mocha": "2.3.4",
+    "mocha-jshint": "2.2.6"
   }
 }
