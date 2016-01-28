@@ -423,6 +423,53 @@ describe('Simple tables', function() {
                 deepEqual(res.status, 404);
             });
         });
+        it('allows overriding columns', function() {
+            return router.request({
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                method: 'put',
+                body: {
+                    table: 'simple-table',
+                    attributes: {
+                        key: 'override_test',
+                        tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
+                        body: new Buffer("<p>test<p>")
+                    }
+                }
+            })
+            .then(function(res) {
+                deepEqual(res.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'put',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'override_test',
+                            tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
+                            body: new Buffer("<p>new_test<p>")
+                        }
+                    }
+                });
+            })
+            .then(function(res) {
+                deepEqual(res.status, 201);
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'override_test'
+                        }
+                    }
+                });
+            })
+            .then(function(res) {
+                deepEqual(res.status, 200);
+                deepEqual(res.body.items.length, 1);
+                deepEqual(res.body.items[0].body, new Buffer("<p>new_test<p>"));
+            });
+        });
     });
 
     context('Get', function() {
