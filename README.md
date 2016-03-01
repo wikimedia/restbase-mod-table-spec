@@ -107,6 +107,12 @@ Removed items expire no less than `revisionRetentionPolicy.grace_ttl` seconds.
 When `revisionRetentionPolicy.type` is `ttl`, all items are maintained no less than for
 `revisionRetentionPolicy.ttl` seconds, and expire after that period.
 
+### latest_hash
+When `revisionRetentionPolicy.type` is `latest_hash`, only the latest row per `hash` key
+is kept, all the previous are deleted. The order is established by the ordering of the
+first `range` key. This retention policy is not supported for tables with secondary indexes
+and for tables with no `range` keys other than `tid`.
+
 ## Custom TTL
 A custom TTL can be set for individual objects on `PUT` requests by providing a special
 `_ttl` integer attribute. Its value indicates the amount of time (in seconds) after which
