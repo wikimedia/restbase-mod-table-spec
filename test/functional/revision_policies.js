@@ -134,6 +134,42 @@ var testIntervalSchema = {
     }
 };
 
+var testSchemaLatestHash = {
+    table: 'revPolicyLatestHashTest',
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'desc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'latest_hash'
+    }
+};
+
+var testSchemaLatestHashAsc = {
+    table: 'testSchemaLatestHashAsc',
+    attributes: {
+        title: 'string',
+        rev: 'int',
+        tid: 'timeuuid',
+        comment: 'string'
+    },
+    index: [
+        { attribute: 'title', type: 'hash' },
+        { attribute: 'rev', type: 'range', order: 'asc' },
+        { attribute: 'tid', type: 'range', order: 'desc' }
+    ],
+    revisionRetentionPolicy: {
+        type: 'latest_hash'
+    }
+};
+
 describe('MVCC revision policy', function() {
     before(function() {
         return router.setup()
@@ -142,7 +178,9 @@ describe('MVCC revision policy', function() {
                 testSchemaNo2ary,
                 testIntervalSchema,
                 testIntervalSchema2,
-                testSchemaTtlPolicy]
+                testSchemaTtlPolicy,
+                testSchemaLatestHash,
+                testSchemaLatestHashAsc]
             .map(function(schema) {
                 return router.request({
                     uri: '/domains_test/sys/table/' + schema.table,
@@ -161,7 +199,9 @@ describe('MVCC revision policy', function() {
             testSchemaNo2ary,
             testIntervalSchema,
             testIntervalSchema2,
-            testSchemaTtlPolicy]
+            testSchemaTtlPolicy,
+            testSchemaLatestHash,
+            testSchemaLatestHashAsc]
         .map(function(schema) {
             return router.request({
                 uri: '/domains_test/sys/table/' + schema.table,
@@ -367,9 +407,9 @@ describe('MVCC revision policy', function() {
         });
     };
 
-    function createRenders(schema, title, revision, timestamps) {
+    function createRenders(schema, title, revisions_timestamps) {
         var index = 1;
-        return P.each(timestamps, function(timestamp) {
+        return P.each(revisions_timestamps, function(rev_ts) {
             return router.request({
                 uri: '/domains_test/sys/table/'+ schema.table +'/',
                 method: 'put',
@@ -377,8 +417,8 @@ describe('MVCC revision policy', function() {
                     table: schema.table,
                     attributes: {
                         title: title,
-                        rev: revision,
-                        tid: utils.testTidFromDate(timestamp),
+                        rev: rev_ts[0],
+                        tid: utils.testTidFromDate(rev_ts[1]),
                         comment: '#' + (index++)
                     }
                 }
@@ -445,18 +485,18 @@ describe('MVCC revision policy', function() {
     // Renders number 1 (first one is never deleted), 3, 4, 5, 7 must survive, others should get removed
     it('sets a TTL for interval rev policy', function() {
         this.timeout(5000);
-        return createRenders(testIntervalSchema2, "Revisioned", 1000, [
+        return createRenders(testIntervalSchema2, "Revisioned", [
             // Day 1: 3 renders come
-            new Date("2015-04-01 12:00:00-0000"),
-            new Date("2015-04-01 12:10:00-0000"),
-            new Date("2015-04-01 12:50:00-0000"),
+            [ 1000, new Date("2015-04-01 12:00:00-0000") ],
+            [ 1000, new Date("2015-04-01 12:10:00-0000") ],
+            [ 1000, new Date("2015-04-01 12:50:00-0000") ],
             // Next day - nothing
             // Next day - one revision comes
-            new Date("2015-04-03 12:00:00-0000"),
+            [ 1000, new Date("2015-04-03 12:00:00-0000") ],
             // Next day tree more
-            new Date("2015-04-04 12:00:00-0000"),
-            new Date("2015-04-04 12:30:00-0000"),
-            new Date("2015-04-04 13:00:00-0000")
+            [ 1000, new Date("2015-04-04 12:00:00-0000") ],
+            [ 1000, new Date("2015-04-04 12:30:00-0000") ],
+            [ 1000, new Date("2015-04-04 13:00:00-0000") ]
         ])
         .delay(2000)
         .then(function() {
@@ -490,16 +530,16 @@ describe('MVCC revision policy', function() {
     it('sets a TTL for interval rev policy', function() {
         this.timeout(5000);
         // Day 1: 3 renders come
-        return createRenders(testIntervalSchema, "Sliding", 1001, [
-            new Date("2015-04-01 05:00:00-0000"),
-            new Date("2015-04-01 11:00:00-0000"),
-            new Date("2015-04-01 17:00:00-0000"),
-            new Date("2015-04-01 23:00:00-0000"),
-            new Date("2015-04-02 05:00:00-0000"),
-            new Date("2015-04-02 11:00:00-0000"),
-            new Date("2015-04-02 17:00:00-0000"),
-            new Date("2015-04-02 23:00:00-0000"),
-            new Date("2015-04-03 05:00:00-0000")
+        return createRenders(testIntervalSchema, "Sliding", [
+            [ 1001, new Date("2015-04-01 05:00:00-0000") ],
+            [ 1001, new Date("2015-04-01 11:00:00-0000") ],
+            [ 1001, new Date("2015-04-01 17:00:00-0000") ],
+            [ 1001, new Date("2015-04-01 23:00:00-0000") ],
+            [ 1001, new Date("2015-04-02 05:00:00-0000") ],
+            [ 1001, new Date("2015-04-02 11:00:00-0000") ],
+            [ 1001, new Date("2015-04-02 17:00:00-0000") ],
+            [ 1001, new Date("2015-04-02 23:00:00-0000") ],
+            [ 1001, new Date("2015-04-03 05:00:00-0000") ]
         ])
         .delay(3000)
         .then(function() {
@@ -523,6 +563,71 @@ describe('MVCC revision policy', function() {
             assertOne(items, utils.testTidFromDate(new Date("2015-04-01 23:00:00-0000")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-02 23:00:00-0000")));
             assertOne(items, utils.testTidFromDate(new Date("2015-04-03 05:00:00-0000")));
+        });
+    });
+
+    it('deletes older content for latest_hash policy', function() {
+        this.timeout(5000);
+        // Day 1: 3 renders come
+        return createRenders(testSchemaLatestHash, "latest_hash", [
+            [ 1000, new Date("2015-04-01 05:00:00-0000") ],
+            [ 1001, new Date("2015-04-01 11:00:00-0000") ],
+            [ 1001, new Date("2015-04-01 12:00:00-0000") ],
+            [ 1002, new Date("2015-04-01 17:00:00-0000") ],
+            [ 1002, new Date("2015-04-01 18:00:00-0000") ]
+        ])
+        .delay(2000)
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testSchemaLatestHash.table +'/',
+                method: 'get',
+                body: {
+                    table: testSchemaLatestHash.table,
+                    attributes: {
+                        title: 'latest_hash'
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response.body);
+            assert.ok(response.body.items);
+            var items = response.body.items;
+            assert.deepEqual(items.length, 1);
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 18:00:00-0000")));
+        });
+    });
+
+    it('deletes older content for latest_hash policy, asc order', function() {
+        this.timeout(5000);
+        // Day 1: 3 renders come
+        return createRenders(testSchemaLatestHashAsc, "latest_hash_asc", [
+            [ 1002, new Date("2015-04-01 17:00:00-0000") ],
+            [ 1002, new Date("2015-04-01 18:00:00-0000") ],
+            [ 1000, new Date("2015-04-01 05:00:00-0000") ],
+            [ 1001, new Date("2015-04-01 11:00:00-0000") ],
+            [ 1001, new Date("2015-04-01 12:00:00-0000") ],
+            [ 1000, new Date("2015-04-01 06:00:00-0000") ]
+        ])
+        .delay(2000)
+        .then(function() {
+            return router.request({
+                uri: '/domains_test/sys/table/'+ testSchemaLatestHashAsc.table +'/',
+                method: 'get',
+                body: {
+                    table: testSchemaLatestHashAsc.table,
+                    attributes: {
+                        title: 'latest_hash_asc'
+                    }
+                }
+            });
+        })
+        .then(function(response) {
+            assert.ok(response.body);
+            assert.ok(response.body.items);
+            var items = response.body.items;
+            assert.deepEqual(items.length, 1);
+            assertOne(items, utils.testTidFromDate(new Date("2015-04-01 06:00:00-0000")));
         });
     });
 });
