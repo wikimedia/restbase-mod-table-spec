@@ -17,13 +17,12 @@ paths:
     get:
       operationId: getTableSchema
 
-  /{table}/{+rest}:
-    get: *get
-    put: *put
-    post: *put
-
   /{table}/:
     get: *get
     put: *put
     post: *put
 
+  /{table}/{+rest}:
+    get: *get
+    put: *put
+    post: *put
