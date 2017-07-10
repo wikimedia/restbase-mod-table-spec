@@ -368,12 +368,4 @@ describe('Unit tests for validation methods', function() {
         });
 
     });
-    it('secondary index must be defined', function() {
-        test(function() {
-            validator.validateGetRequest({
-                table: 'test',
-                index: 'this_does_not_exist'
-            }, sampleSchema);
-        }, /Invalid query\. Index does not exist/);
-    });
 });
