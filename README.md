@@ -38,12 +38,6 @@ Example:
             // Project some additional attributes into the secondary index
             { type: 'proj', attribute: 'length' }
         }
-    },
-    // Optional policy for retention of obsolete versions (defaults to type all).
-    revisionRetentionPolicy: {
-        type: 'latest',
-        count: 5,
-        grace_ttl: 86400
     }
 }
 ```
@@ -81,45 +75,10 @@ acknowledged. We will also support optional strongly consistent secondary
 index requests at the cost of cross-checking the index match with the actual
 data, at least on some backends.
 
-## Revision retention policies
-In an MVCC system, each update of a record results in a new revision.
-Depending on the application, these historical versions may or may not be
-useful; It may be desirable to limit the number of revisions retained in
-order to bound the storage requirements.
-
-The currently supported revision retention policy types are:
-
-### all
-When `revisionRetentionPolicy.type` is `all`, all revisions are maintained
-indefinitely.
-
-### latest
-When `revisionRetentionPolicy.type` is `latest`, the last
-`revisionRetentionPolicy.count` records are maintained, any others are
-expired in no less than `revisionRetentionPolicy.grace_ttl` seconds.
-
-### interval
-When `revisionRetentionPolicy.type` is `interval`, each `revisionRetentionPolicy.count`
-items are maintained each `revisionRetentionPolicy.interval` milliseconds.
-Removed items expire no less than `revisionRetentionPolicy.grace_ttl` seconds.
-
-### ttl
-When `revisionRetentionPolicy.type` is `ttl`, all items are maintained no less than for
-`revisionRetentionPolicy.ttl` seconds, and expire after that period.
-
-### latest_hash
-When `revisionRetentionPolicy.type` is `latest_hash`, only the latest row per `hash` key
-is kept, all the previous are deleted. The order is established by the ordering of the
-first `range` key. This retention policy is not supported for tables with secondary indexes
-and for tables with no `range` keys other than `tid`.
-
 ## Custom TTL
 A custom TTL can be set for individual objects on `PUT` requests by providing a special
 `_ttl` integer attribute. Its value indicates the amount of time (in seconds) after which
 the record will be removed from storage.
- 
-Please note, that setting custom `_ttl` for individual rows is a dangerous feature, so do
-not mix it with `revisionRetentionPolicy` and generally use only if you know what you are doing.
 
 To select a TTL of a row, provide `withTTL: true` key in the query.
  
