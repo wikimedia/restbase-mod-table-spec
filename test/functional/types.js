@@ -38,14 +38,7 @@ describe('Types', function() {
         index: [
             { attribute: 'string', type: 'hash' },
             { attribute: 'tid', type: 'range', order: 'desc' }
-        ],
-        secondaryIndexes: {
-            test: [
-                { attribute: 'int', type: 'hash' },
-                { attribute: 'string', type: 'range', order: 'desc' },
-                { attribute: 'boolean', type: 'range', order: 'desc' }
-            ]
-        }
+        ]
     };
     var typeSetsTableSpec = {
         domain: 'restbase.cassandra.test.local',
@@ -319,24 +312,6 @@ describe('Types', function() {
                 deepEqual(response.status, 200);
                 deepEqual(response.body.items.length, 1);
                 deepEqual(typeof response.body.items[0].num_string, 'string');
-            });
-        });
-        it("retrieves matching types from index", function() {
-            return router.request({
-                uri: '/restbase.cassandra.test.local/sys/table/typeTable/',
-                method: 'get',
-                body: {
-                    table: "typeTable",
-                    attributes: {
-                        int: '1'
-                    },
-                    index: 'test',
-                    proj: ['int', 'boolean']
-                }
-            })
-            .then(function(response){
-                response.body.items[0].int = 1;
-                response.body.items[0].boolean = true;
             });
         });
         it('supports comparing longs', function() {
