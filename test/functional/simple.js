@@ -6,6 +6,7 @@
 var router = module.parent.router;
 var deepEqual = require('../utils/test_utils.js').deepEqual;
 var utils = require('../utils/test_utils.js');
+var P = require('bluebird');
 
 describe('Simple tables', function() {
 
@@ -704,6 +705,68 @@ describe('Simple tables', function() {
                 deepEqual(res.status, 200);
                 deepEqual(res.body.items.length, 1);
                 deepEqual(res.body.items[0]._ttl > 290, true);
+            });
+        });
+    });
+
+    context('Delete', () => {
+        it('deletes a range of values', () => {
+            return P.map(Array.from(new Array(20), (x, i) => i), (sec) => {
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'put',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'range-del-test',
+                            tid: utils.testTidFromDate(new Date(sec * 1e3))
+                        }
+                    }
+                });
+            }).then((res) => {
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'range-del-test'
+                        }
+                    }
+                });
+            }).then((res) => {
+                deepEqual(res.status, 200);
+                deepEqual(res.body.items.length, 20);
+
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'delete',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'range-del-test',
+                            tid: { lt: utils.testTidFromDate(new Date(10 * 1e3)) }
+                        }
+                    }
+                });
+            }).then((res) => {
+                deepEqual(res.status, 201);
+
+                return router.request({
+                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                    method: 'get',
+                    body: {
+                        table: 'simple-table',
+                        attributes: {
+                            key: 'range-del-test'
+                        }
+                    }
+                });
+            }).then((res) => {
+                deepEqual(res.status, 200);
+                deepEqual(res.body.items.length, 10);
+                deepEqual(res.body.items[0].tid, utils.testTidFromDate(new Date(19 * 1e3)));
+                deepEqual(res.body.items[9].tid, utils.testTidFromDate(new Date(10 * 1e3)));
             });
         });
     });
