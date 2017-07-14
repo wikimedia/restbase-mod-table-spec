@@ -712,15 +712,15 @@ describe('Simple tables', function() {
     context('Delete', () => {
         it('removes discrete values', () => {
             return router.request({
-                    uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
-                    method: 'put',
-                    body: {
-                        table: 'simple-table',
-                        attributes: {
-                            key: 'del-test',
-                            tid: utils.testTidFromDate(new Date(1))
-                        }
+                uri: '/restbase.cassandra.test.local/sys/table/simple-table/',
+                method: 'put',
+                body: {
+                    table: 'simple-table',
+                    attributes: {
+                        key: 'del-test',
+                        tid: utils.testTidFromDate(new Date(1))
                     }
+                }
             })
             .then(() =>
                 router.request({
