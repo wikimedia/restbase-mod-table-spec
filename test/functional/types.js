@@ -8,7 +8,6 @@ var testU = require('../utils/test_utils.js');
 
 var deepEqual = testU.deepEqual;
 var roundDecimal = testU.roundDecimal;
-var TimeUUID = require('cassandra-uuid').TimeUuid;
 
 describe('Types', function() {
 
