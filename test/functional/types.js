@@ -32,12 +32,10 @@ describe('Types', function() {
             timestamp: 'timestamp',
             json: 'json',
             num_string: 'string', // String containing a `numeric` value to check it's not converted to number
-            long: 'long',
-            tid: 'timeuuid'
+            long: 'long'
         },
         index: [
             { attribute: 'string', type: 'hash' },
-            { attribute: 'tid', type: 'range', order: 'desc' }
         ]
     };
     var typeSetsTableSpec = {
@@ -175,7 +173,6 @@ describe('Types', function() {
             })
             .then(function(response) {
                 response.body.items[0].float = roundDecimal(response.body.items[0].float);
-                response.body.items[1].float = roundDecimal(response.body.items[1].float);
                 deepEqual(response.body.items, [{
                     string: 'string',
                     blob: new Buffer('blob'),
@@ -193,91 +190,7 @@ describe('Types', function() {
                         foo: 'bar'
                     },
                     long: '9223372036854775806'
-                },{
-                    string: 'string',
-                    blob: new Buffer('blob'),
-                    set: ['bar','baz','foo'],
-                    'int': -1,
-                    varint: -4503599627370496,
-                    decimal: '1.2',
-                    'float': -1.1,
-                    'double': 1.2,
-                    'boolean': true,
-                    timeuuid: 'c931ec94-6c31-11e4-b6d0-0f67e29867e0',
-                    uuid: 'd6938370-c996-4def-96fb-6af7ba9b6f72',
-                    timestamp: '2014-11-14T19:10:40.912Z',
-                    json: {
-                        foo: 'bar'
-                    },
-                    long: '9223372036854775807'
                 }]);
-            });
-        });
-        it('does not override values if not set', function() {
-            var value = {
-                string: 'string_override',
-                blob: new Buffer('blob'),
-                set: ['bar','baz','foo'],
-                'int': 48,
-                varint: 1,
-                decimal: '1.4',
-                'float': 3.4,
-                'double': 1.2,
-                'boolean': false,
-                timeuuid: 'c931ec94-6c31-11e4-b6d0-0f67e29867e0',
-                uuid: 'd6938370-c996-4def-96fb-6af7ba9b6f72',
-                timestamp: '2014-11-14T19:10:40.912Z',
-                json: {
-                    foo: 'bar'
-                },
-                long: '9223372036854775806',
-                tid: 'c931ec94-6c31-11e4-b6d0-0f67e29867e0',
-                num_string: '123'
-            };
-
-            return router.request({
-                uri: '/restbase.cassandra.test.local/sys/table/typeTable/',
-                method: 'put',
-                body: {
-                    table: "typeTable",
-                    attributes: Object.assign({}, value)
-                }
-            })
-            .then(function(response){
-                deepEqual(response, {status:201});
-                return router.request({
-                    uri: '/restbase.cassandra.test.local/sys/table/typeTable/',
-                    method: 'put',
-                    body: {
-                        table: "typeTable",
-                        attributes: {
-                            string: 'string_override',
-                            int: 48,
-                            boolean: false,
-                            tid: 'c931ec94-6c31-11e4-b6d0-0f67e29867e0'
-                        }
-                    }
-                });
-            })
-            .then(function(response){
-                deepEqual(response, {status:201});
-                return router.request({
-                    uri: '/restbase.cassandra.test.local/sys/table/typeTable/',
-                    method: 'get',
-                    body: {
-                        table: "typeTable",
-                        attributes: {
-                            string: 'string_override'
-                        }
-                    }
-                });
-            })
-            .then(function(response) {
-                deepEqual(response.status, 200);
-                // Float comparing doesn't really work, so delete it.
-                delete response.body.items[0].float;
-                delete value.float;
-                deepEqual(response.body.items[0], value);
             });
         });
         it("return string if numeric data saved in string typed field", function() {
