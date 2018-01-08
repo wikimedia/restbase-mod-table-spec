@@ -1,6 +1,6 @@
 {
-  "name": "restbase-mod-table-spec-ng",
-  "version": "0.2.2",
+  "name": "restbase-mod-table-spec",
+  "version": "1.0.0",
   "description": "Tests and specification for RESTBase backend modules",
   "main": "index.js",
   "repository": {
