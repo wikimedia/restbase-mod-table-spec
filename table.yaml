@@ -8,6 +8,8 @@ templates:
     operationId: get
   put: &put
     operationId: put
+  delete: &delete
+    operationId: delete
 paths:
   /{table}:
     put:
@@ -21,8 +23,10 @@ paths:
     get: *get
     put: *put
     post: *put
+    delete: *delete
 
   /{table}/{+rest}:
     get: *get
     put: *put
     post: *put
+    delete: *delete
