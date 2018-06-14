@@ -17,13 +17,7 @@ describe('Simple tables', function() {
     var simpleTableSchema = {
         table: 'simple-table',
         options: {
-            durability: 'low',
-            compression: [
-                {
-                    algorithm: 'deflate',
-                    block_size: 256
-                }
-            ]
+            durability: 'low'
         },
         attributes: {
             key: 'string',
@@ -92,13 +86,7 @@ describe('Simple tables', function() {
                 body: {
                     table: 'simple-table',
                     options: {
-                        durability: 'low',
-                        compression: [
-                            {
-                                algorithm: 'deflate',
-                                block_size: 256
-                            }
-                        ]
+                        durability: 'low'
                     },
                     attributes: {
                         key: 'string',
@@ -135,7 +123,6 @@ describe('Simple tables', function() {
                 method: 'put',
                 body: {
                     table: 'simple-table',
-                    consistency: 'localQuorum',
                     attributes: {
                         key: 'testing',
                         tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),

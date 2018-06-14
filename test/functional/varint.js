@@ -52,7 +52,6 @@ describe('Varint tables', function() {
             method: 'put',
             body: {
                 table: 'varintTable',
-                consistency: 'localQuorum',
                 attributes: {
                     key: 'testing',
                     rev: 1,

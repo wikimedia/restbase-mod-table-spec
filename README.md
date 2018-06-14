@@ -81,35 +81,6 @@ A custom TTL can be set for individual objects on `PUT` requests by providing a 
 the record will be removed from storage.
 
 To select a TTL of a row, provide `withTTL: true` key in the query.
- 
-# Options
-
-The `option` attribute can be used to tune the storage behavior. Example:
-
-```javascript
-options: {
-  // Indicate a preference of compression algorithms and parameters, most
-  // preferred first.
-  compression: [{
-    algorithm: 'snappy', // 'lz4' (default), 'deflate', 'snappy'
-    block_size: 1024, // powers of two 64 .. 1024
-  }],
-  // Describe the primary update behavior, to allow backends to tune
-  // parameters. In Cassandra, this affects the compaction strategy.
-  updates: {
-    pattern: 'timeseries' // or: 'write-once', 'random-update' (default)
-  }
-}
-```
-
-## Update patterns: `updates`
-
-- `random-update` (default): Robust support for random writes, updates and deletions,
-    but might not perform as well as some of the other options.
-- `write-once`: Most data is only written once, and there are few deletions.
-- `timeseries`: Write order correlates strongly with range index order. A
-    typical use case would be timeseries data, with a timestamp or revision id
-    as the first range index element.
 
 # Queries
 Select the first 50 entries:
