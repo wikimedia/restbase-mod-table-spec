@@ -31,7 +31,6 @@
   },
   "homepage": "https://github.com/wikimedia/restbase-mod-table-spec",
   "dependencies": {
-    "core-js": "^2.5.7",
     "routeswitch": "~0.6.3",
     "cassandra-uuid": "^0.1.0",
     "js-yaml": "^3.12.0"
