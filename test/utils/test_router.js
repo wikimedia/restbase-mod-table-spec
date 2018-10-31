@@ -1,7 +1,5 @@
 "use strict";
 
-require('core-js/shim');
-
 /*
 *  test router to exercise all tests uning the restbase-cassandra handler
 */
