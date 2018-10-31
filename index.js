@@ -10,12 +10,10 @@ module.exports = {
         module.router = makeRouter(clientConstructor);
         const normalizedPath = path.join(__dirname, 'test', 'functional');
         fs.readdirSync(normalizedPath)
-        .map(function(file) {
-            require('./test/functional/' + file);
-        });
+        .map(file => require(`./test/functional/${file}`));
     },
     getTestUtils: () => require('./test/utils/test_utils.js'),
-    spec: yaml.safeLoad(fs.readFileSync(__dirname + '/table.yaml')),
+    spec: yaml.safeLoad(fs.readFileSync(`${__dirname}/table.yaml`)),
     validator: require('./lib/validator')
 };
 

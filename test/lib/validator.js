@@ -1,9 +1,5 @@
 'use strict';
 
-// mocha defines to avoid JSHint breakage
-/* global describe, it, before, beforeEach, after, afterEach */
-require('core-js/shim');
-
 var deepEqual = require('../utils/test_utils').deepEqual;
 var validator = require('../../lib/validator');
 
