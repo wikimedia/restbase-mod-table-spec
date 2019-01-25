@@ -1,1 +1,22 @@
-extends: 'eslint-config-node-services'
+extends: 
+  - 'wikimedia/server'
+
+plugins:
+  - json
+  - jsdoc
+
+rules:
+  array-bracket-spacing:
+    - off
+  computed-property-spacing:
+    - off
+  indent: 
+    - error
+    - 4
+    - SwitchCase: 1
+      MemberExpression: 'off'
+  no-multi-spaces:
+    - off
+  space-in-parens:
+    - error
+    - never
