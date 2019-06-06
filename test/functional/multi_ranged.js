@@ -1,16 +1,13 @@
-"use strict";
-
-// mocha defines to avoid JSHint breakage
-/* global describe, context, it, before, beforeEach, after, afterEach */
+'use strict';
 
 var router = module.parent.router;
 var utils = require('../utils/test_utils.js');
 var deepEqual = utils.deepEqual;
 
-describe("Multiranged tables", function() {
+describe('Multiranged tables', function () {
     this.timeout(15000);
 
-    before(function () { return router.setup(); });
+    before(() => router.setup());
 
     var multirangedSchema = {
         domain: 'restbase.cassandra.test.local',
@@ -23,7 +20,7 @@ describe("Multiranged tables", function() {
             uri: 'string',
             body: 'blob',
             // 'deleted', 'nomove' etc?
-            restrictions: 'set<string>',
+            restrictions: 'set<string>'
         },
         index: [
             { attribute: 'key', type: 'hash' },
@@ -33,13 +30,13 @@ describe("Multiranged tables", function() {
         ]
     };
 
-    it('creates table with more than one range key', function() {
+    it('creates table with more than one range key', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable',
             method: 'put',
             body: multirangedSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable',
@@ -47,13 +44,13 @@ describe("Multiranged tables", function() {
                 body: {}
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 200);
             deepEqual(response.body, multirangedSchema);
         });
     });
 
-    it('inserts a row with more than one range key', function() {
+    it('inserts a row with more than one range key', function () {
         var testEntity = {
             key: 'testing',
             tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
@@ -66,76 +63,76 @@ describe("Multiranged tables", function() {
             uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
             method: 'put',
             body: {
-                table: "multiRangeTable",
+                table: 'multiRangeTable',
                 attributes: {
                     key: 'testing',
                     tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
-                    uri: "test"
+                    uri: 'test'
                 }
             }
         })
-        .then(function(response) {
-            deepEqual(response, {status:201});
+        .then(function (response) {
+            deepEqual(response, { status: 201 });
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
                 method: 'get',
                 body: {
-                    table: "multiRangeTable",
+                    table: 'multiRangeTable',
                     attributes: {
                         key: 'testing'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 200);
             deepEqual(response.body.items.length, 1);
             deepEqual(response.body.items[0], testEntity);
         });
     });
 
-    it('correctly sorts results', function() {
+    it('correctly sorts results', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
             method: 'put',
             body: {
-                table: "multiRangeTable",
+                table: 'multiRangeTable',
                 attributes: {
                     key: 'sorting',
                     tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
-                    uri: "1"
+                    uri: '1'
                 }
             }
         })
-        .then(function(response) {
-            deepEqual(response, {status:201});
+        .then(function (response) {
+            deepEqual(response, { status: 201 });
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
                 method: 'put',
                 body: {
-                    table: "multiRangeTable",
+                    table: 'multiRangeTable',
                     attributes: {
                         key: 'sorting',
                         tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
-                        uri: "2"
+                        uri: '2'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
                 method: 'get',
                 body: {
-                    table: "multiRangeTable",
+                    table: 'multiRangeTable',
                     attributes: {
                         key: 'sorting'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 200);
             deepEqual(response.body.items.length, 2);
             deepEqual(response.body.items[0].uri, '2');
@@ -143,49 +140,48 @@ describe("Multiranged tables", function() {
         });
     });
 
-
-    it('first sorts on first range column', function() {
+    it('first sorts on first range column', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
             method: 'put',
             body: {
-                table: "multiRangeTable",
+                table: 'multiRangeTable',
                 attributes: {
                     key: 'order',
                     tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
-                    uri: "2"
+                    uri: '2'
                 }
             }
         })
-        .then(function(response) {
-            deepEqual(response, {status:201});
+        .then(function (response) {
+            deepEqual(response, { status: 201 });
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
                 method: 'put',
                 body: {
-                    table: "multiRangeTable",
+                    table: 'multiRangeTable',
                     attributes: {
                         key: 'order',
                         tid: utils.testTidFromDate(new Date('2013-08-09 18:43:58-0700')),
-                        uri: "1"
+                        uri: '1'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable/',
                 method: 'get',
                 body: {
-                    table: "multiRangeTable",
+                    table: 'multiRangeTable',
                     attributes: {
                         key: 'order'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 200);
             deepEqual(response.body.items.length, 2);
             deepEqual(response.body.items[0].uri, '1');
@@ -195,21 +191,21 @@ describe("Multiranged tables", function() {
         });
     });
 
-    it('drops table', function() {
+    it('drops table', function () {
         return router.request({
-            uri: "/restbase.cassandra.test.local/sys/table/multiRangeTable",
-            method: "delete",
+            uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable',
+            method: 'delete',
             body: {}
         })
-        .then(function(res) {
+        .then(function (res) {
             deepEqual(res.status, 204);
             return router.request({
-                uri: "/restbase.cassandra.test.local/sys/table/multiRangeTable",
-                method: "get",
+                uri: '/restbase.cassandra.test.local/sys/table/multiRangeTable',
+                method: 'get',
                 body: {}
             });
         })
-        .then(function(res) {
+        .then(function (res) {
             deepEqual(res.status, 500);
         });
     });

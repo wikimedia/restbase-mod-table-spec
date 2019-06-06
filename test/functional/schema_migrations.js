@@ -1,7 +1,4 @@
-"use strict";
-
-// mocha defines to avoid JSHint breakage
-/* global describe, context, it, before, beforeEach, after, afterEach */
+'use strict';
 
 var router = module.parent.router;
 var assert = require('assert');
@@ -29,7 +26,7 @@ var testTable0 = {
         { attribute: 'tid', type: 'range', order: 'desc' }
     ],
     secondaryIndexes: {
-        by_rev : [
+        by_rev: [
             { attribute: 'rev', type: 'hash' },
             { attribute: 'tid', type: 'range', order: 'desc' },
             { attribute: 'title', type: 'range', order: 'asc' },
@@ -56,17 +53,17 @@ var testTableNoRevPolicy = {
     ]
 };
 
-describe('Schema migration', function() {
-    before(function() {
+describe('Schema migration', function () {
+    before(function () {
         return router.setup()
-        .then(function() {
+        .then(function () {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/testTable0',
                 method: 'PUT',
                 body: testTable0
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -75,18 +72,18 @@ describe('Schema migration', function() {
                 body: testTableNoRevPolicy
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 201);
         });
     });
 
-    after(function() {
+    after(function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/testTable0',
             method: 'delete'
         })
-        .then(function() {
+        .then(function () {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/testTableNoRevPolicy',
                 method: 'delete'
@@ -94,7 +91,7 @@ describe('Schema migration', function() {
         });
     });
 
-    it('handles column additions', function() {
+    it('handles column additions', function () {
         var newSchema = clone(testTable0);
         newSchema.version = 3;
         newSchema.attributes.email = 'string';
@@ -104,7 +101,7 @@ describe('Schema migration', function() {
             method: 'PUT',
             body: newSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response);
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -112,7 +109,7 @@ describe('Schema migration', function() {
                 method: 'GET'
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 200);
             assert.deepEqual(response.body, newSchema);
@@ -125,13 +122,13 @@ describe('Schema migration', function() {
                     attributes: {
                         title: 'add_test',
                         rev: 1,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        tid: utils.testTidFromDate(new Date('2015-04-01 12:00:00-0500')),
                         email: 'test'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -146,14 +143,14 @@ describe('Schema migration', function() {
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 200);
             assert.deepEqual(response.body.items[0].email, 'test');
         });
     });
 
-    it('handles column removals', function() {
+    it('handles column removals', function () {
         var newSchema = clone(testTable0);
         newSchema.version = 4;
         delete newSchema.attributes.author;
@@ -163,23 +160,23 @@ describe('Schema migration', function() {
             method: 'PUT',
             body: newSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response);
             assert.deepEqual(response.status, 201);
 
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/testTable0',
-                method: 'GET',
+                method: 'GET'
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 200);
             assert.deepEqual(response.body, newSchema);
         });
     });
 
-    it('refuses to remove indexed columns', function() {
+    it('refuses to remove indexed columns', function () {
         var newSchema = clone(testTable0);
         newSchema.version = 5;
         delete newSchema.attributes.title;
@@ -189,15 +186,15 @@ describe('Schema migration', function() {
             method: 'PUT',
             body: newSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.deepEqual(response.status, 500);
             assert.ok(
-                    /is not in attributes/.test(response.body.stack),
-                    'error message looks wrong');
+                /is not in attributes/.test(response.body.stack),
+                'error message looks wrong');
         });
     });
 
-    it('handles adding static columns', function() {
+    it('handles adding static columns', function () {
         var newSchema = clone(testTableNoRevPolicy);
         newSchema.version = 6;
         newSchema.attributes.added_static_column = 'string';
@@ -207,7 +204,7 @@ describe('Schema migration', function() {
             method: 'put',
             body: newSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response);
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -215,7 +212,7 @@ describe('Schema migration', function() {
                 method: 'GET'
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.deepEqual(response.body, newSchema);
             // Also test that column is indeed static
             return router.request({
@@ -226,13 +223,13 @@ describe('Schema migration', function() {
                     attributes: {
                         title: 'test',
                         rev: 1,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        tid: utils.testTidFromDate(new Date('2015-04-01 12:00:00-0500')),
                         added_static_column: 'test1'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -243,13 +240,13 @@ describe('Schema migration', function() {
                     attributes: {
                         title: 'test',
                         rev: 2,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        tid: utils.testTidFromDate(new Date('2015-04-01 12:00:00-0500')),
                         added_static_column: 'test2'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -264,7 +261,7 @@ describe('Schema migration', function() {
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 200);
             assert.deepEqual(response.body.items[0].added_static_column, 'test2');
@@ -272,7 +269,7 @@ describe('Schema migration', function() {
     });
 
     // This is a no-op test for cassandra, but it's a different codepath in SQLite
-    it('adds one more static column', function() {
+    it('adds one more static column', function () {
         var newSchema = clone(testTableNoRevPolicy);
         newSchema.version = 7;
         newSchema.attributes.added_static_column = 'string';
@@ -284,7 +281,7 @@ describe('Schema migration', function() {
             method: 'put',
             body: newSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response);
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -292,7 +289,7 @@ describe('Schema migration', function() {
                 method: 'GET'
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.deepEqual(response.body, newSchema);
             // Also test that column is indeed static
             return router.request({
@@ -303,13 +300,13 @@ describe('Schema migration', function() {
                     attributes: {
                         title: 'test2',
                         rev: 1,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        tid: utils.testTidFromDate(new Date('2015-04-01 12:00:00-0500')),
                         added_static_column2: 'test1'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -320,13 +317,13 @@ describe('Schema migration', function() {
                     attributes: {
                         title: 'test2',
                         rev: 2,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500")),
+                        tid: utils.testTidFromDate(new Date('2015-04-01 12:00:00-0500')),
                         added_static_column2: 'test2'
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 201);
             return router.request({
@@ -341,29 +338,29 @@ describe('Schema migration', function() {
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.ok(response, 'undefined response');
             assert.deepEqual(response.status, 200);
             assert.deepEqual(response.body.items[0].added_static_column2, 'test2');
         });
     });
 
-    it('does not change static index on existing column', function() {
+    it('does not change static index on existing column', function () {
         var newSchema = clone(testTable0);
         newSchema.version = 8;
-        newSchema.index.push({attribute: 'not_static', type: 'static'});
+        newSchema.index.push({ attribute: 'not_static', type: 'static' });
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/testTable0',
             method: 'put',
             body: newSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.deepEqual(response.status, 500);
         });
     });
 
     // We can't add a secondary index back, so this test must be last in the test set.
-    it('removes a secondary index', function() {
+    it('removes a secondary index', function () {
         var newSchema = clone(testTable0);
         newSchema.version = 9;
         delete newSchema.secondaryIndexes.by_rev;
@@ -372,7 +369,7 @@ describe('Schema migration', function() {
             method: 'put',
             body: newSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.deepEqual(response.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/testTable0/',
@@ -386,7 +383,7 @@ describe('Schema migration', function() {
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.deepEqual(response.status, 500);
             // And check that the table is still usable and index updates didn't break
             return router.request({
@@ -397,12 +394,12 @@ describe('Schema migration', function() {
                     attributes: {
                         title: 'add_test',
                         rev: 111,
-                        tid: utils.testTidFromDate(new Date("2015-04-01 12:00:00-0500"))
+                        tid: utils.testTidFromDate(new Date('2015-04-01 12:00:00-0500'))
                     }
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             assert.deepEqual(response.status, 201);
         });
     });

@@ -1,18 +1,15 @@
-"use strict";
-
-// mocha defines to avoid JSHint breakage
-/* global describe, context, it, before, beforeEach, after, afterEach */
+'use strict';
 
 var router = module.parent.router;
 var utils = require('../utils/test_utils.js');
 var deepEqual = utils.deepEqual;
 var P = require('bluebird');
 
-describe('Invalid request handling', function() {
-    before(function () { return router.setup(); });
+describe('Invalid request handling', function () {
+    before(() => router.setup());
 
-    after(function() {
-        return P.all(['extraFieldSchema', 'orderTest'].map(function(schemaName) {
+    after(function () {
+        return P.all(['extraFieldSchema', 'orderTest'].map(function (schemaName) {
             return router.request({
                 method: 'delete',
                 uri: '/restbase.cassandra.test.local/sys/table/' + schemaName
@@ -20,7 +17,7 @@ describe('Invalid request handling', function() {
         }));
     });
 
-    it('fails when writing to non-existent table', function() {
+    it('fails when writing to non-existent table', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/unknownTable/',
             method: 'put',
@@ -28,16 +25,16 @@ describe('Invalid request handling', function() {
                 table: 'unknownTable',
                 attributes: {
                     key: 'testing',
-                    tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
+                    tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700'))
                 }
             }
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 500);
         });
     });
 
-    it('fails when reading from non-existent table', function() {
+    it('fails when reading from non-existent table', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/unknownTable/',
             method: 'get',
@@ -45,16 +42,16 @@ describe('Invalid request handling', function() {
                 table: 'unknownTable',
                 attributes: {
                     key: 'testing',
-                    tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700')),
+                    tid: utils.testTidFromDate(new Date('2013-08-08 18:43:58-0700'))
                 }
             }
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 500);
         });
     });
 
-    it('Fails to create static column that is a hash key', function() {
+    it('Fails to create static column that is a hash key', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/staticTest',
             method: 'put',
@@ -72,12 +69,12 @@ describe('Invalid request handling', function() {
                 ]
             }
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 500);
         });
     });
 
-    it('Fails to order on non-range column', function() {
+    it('Fails to order on non-range column', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/orderTest',
             method: 'put',
@@ -95,7 +92,7 @@ describe('Invalid request handling', function() {
                 ]
             }
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/orderTest/',
@@ -111,12 +108,12 @@ describe('Invalid request handling', function() {
                 }
             });
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 500);
         });
     });
 
-    it('Fails to make a query on non-existing index', function() {
+    it('Fails to make a query on non-existing index', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/orderTest/',
             method: 'get',
@@ -128,12 +125,12 @@ describe('Invalid request handling', function() {
                 index: 'not_existing!'
             }
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 500);
         });
     });
 
-    it('Validates order keys', function() {
+    it('Validates order keys', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/orderTest/',
             method: 'get',
@@ -143,16 +140,16 @@ describe('Invalid request handling', function() {
                     key: 'string'
                 },
                 order: {
-                    tid: "this_is_wronf"
+                    tid: 'this_is_wronf'
                 }
             }
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 500);
         });
     });
 
-    it('Fails to create table without attributes', function() {
+    it('Fails to create table without attributes', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/noAttrSchema',
             method: 'put',
@@ -161,12 +158,12 @@ describe('Invalid request handling', function() {
                 table: 'noAttrSchema'
             }
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 500);
         });
     });
 
-    it('fails to insert unknown field', function() {
+    it('fails to insert unknown field', function () {
         return router.request({
             method: 'put',
             uri: '/restbase.cassandra.test.local/sys/table/extraFieldSchema',
@@ -182,7 +179,7 @@ describe('Invalid request handling', function() {
                 ]
             }
         })
-        .then(function(res) {
+        .then(function (res) {
             deepEqual(res.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/extraFieldSchema/',
@@ -197,7 +194,7 @@ describe('Invalid request handling', function() {
                 }
             });
         })
-        .then(function(res) {
+        .then(function (res) {
             deepEqual(res.status, 500);
         });
     });

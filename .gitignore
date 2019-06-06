@@ -1,8 +1,10 @@
 coverage/
 .coveralls.yml
+.nyc_output
 node_modules
 npm-debug.log
 .tern-project
 .tern-port
 *~
 .idea/*
+.vscode

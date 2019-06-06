@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /*
 *  test router to exercise all tests uning the restbase-cassandra handler
@@ -7,18 +7,18 @@
 var RouteSwitch = require('routeswitch');
 
 var router = {};
-router.request = function(req) {
+router.request = function (req) {
     var match = this.newRouter.match(req.uri);
     if (match) {
         req.params = match.params;
         var handler = match.methods[req.method.toLowerCase()];
         if (handler) {
             return handler({}, req)
-            .then(function(item){
+            .then(function (item) {
                 // TODO: return HTTPError?
-                //if (item.status >= 400) {
+                // if (item.status >= 400) {
                 //    console.log(item);
-                //}
+                // }
                 return item;
             });
         } else {
@@ -29,12 +29,12 @@ router.request = function(req) {
     }
 };
 
-function flatHandlerFromModDef (modDef, prefix) {
+function flatHandlerFromModDef(modDef, prefix) {
     var handler = { paths: {} };
-    Object.keys(modDef.spec.paths).forEach(function(path) {
+    Object.keys(modDef.spec.paths).forEach(function (path) {
         var pathModSpec = modDef.spec.paths[path];
         handler.paths[prefix + path] = {};
-        Object.keys(pathModSpec).forEach(function(m) {
+        Object.keys(pathModSpec).forEach(function (m) {
             var opId = pathModSpec[m].operationId;
             if (!modDef.operations[opId]) {
                 throw new Error('The module does not export the opration ' + opId);
@@ -45,17 +45,18 @@ function flatHandlerFromModDef (modDef, prefix) {
     return handler;
 }
 
-router.makeRouter = function(clientConstructor) {
+router.makeRouter = function (clientConstructor) {
     var self = this;
     return clientConstructor()
-    .then(function(modDef) {
+    .then(function (modDef) {
+        // eslint-disable-next-line new-cap
         self.newRouter = new RouteSwitch.fromHandlers([flatHandlerFromModDef(modDef, '/{domain}/sys/table')]);
         return self;
     });
 };
 
-module.exports = function(clientConstructor) {
-    router.setup = function() {
+module.exports = function (clientConstructor) {
+    router.setup = function () {
         return this.makeRouter(clientConstructor);
     };
     return router;
