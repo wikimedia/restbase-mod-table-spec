@@ -74,6 +74,26 @@ describe('Simple tables', function () {
                 });
             });
         });
+        it('creates all tables for wildcard', () => {
+            this.timeout(15000);
+            return router.request({
+                uri: '/*/sys/table/simple-table',
+                method: 'put',
+                body: simpleTableSchema
+            })
+            .then((response) => {
+                deepEqual(response.status, 201);
+                return router.request({
+                    uri: '/unused.domain/sys/table/simple-table',
+                    method: 'get',
+                    body: {}
+                })
+                .then((response) => {
+                    deepEqual(response.status, 200);
+                    deepEqual(response.body, simpleTableSchema);
+                });
+            });
+        });
         it('throws an error on unsupported schema update request', function () {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/simple-table',
@@ -828,6 +848,25 @@ describe('Simple tables', function () {
                 deepEqual(res.status, 204);
                 return router.request({
                     uri: '/restbase.cassandra.test.local/sys/table/simple-table',
+                    method: 'get',
+                    body: {}
+                });
+            })
+            .then((res) => {
+                deepEqual(res.status, 500);
+            });
+        });
+        it('drops all tables for wildcard', () => {
+            this.timeout(15000);
+            return router.request({
+                uri: '/*/sys/table/simple-table',
+                method: 'delete',
+                body: {}
+            })
+            .then((res) => {
+                deepEqual(res.status, 204);
+                return router.request({
+                    uri: '/unused.domain/sys/table/simple-table',
                     method: 'get',
                     body: {}
                 });

@@ -282,27 +282,13 @@ describe('Unit tests for validation methods', function () {
             }, /Invalid query\. Found /);
         });
 
-        it('can\'t be an eq predicate after a non-eq predicate', function () {
-            test(function () {
-                validator.validateGetRequest({
-                    table: 'test',
-                    attributes: {
-                        tid: { gt: 10 },
-                        range: 'a'
-                    }
-                }, sampleSchema);
-            }, /Invalid query\. Found /);
-        });
-
-        it('predicate operators must be valid', function () {
-            test(function () {
-                validator.validateGetRequest({
-                    table: 'test',
-                    attributes: {
-                        tid: { this_is_a_wrong_operator: 10 }
-                    }
-                }, sampleSchema);
-            }, /Illegal predicate operator/);
+        it('predicate operators must be valid', () => {
+            test(() => validator.validateGetRequest({
+                table: 'test',
+                attributes: {
+                    tid: { this_is_a_wrong_operator: 10 }
+                }
+            }, sampleSchema), /Illegal predicate operator/);
         });
 
         it('order must be valid', function () {
