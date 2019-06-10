@@ -25,7 +25,7 @@ testUtils.testTidFromDate = function testTidFromDate(date) {
         clockseq: 0x1234,
         msecs: date.getTime(),
         nsecs: 0
-      };
+    };
 
     return uuidv1(options);
 };
