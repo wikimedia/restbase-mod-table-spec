@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var assert = require('assert');
 var TimeUuid = require('cassandra-uuid').TimeUuid;
@@ -16,7 +16,7 @@ testUtils.deepEqual = function (result, expected) {
 };
 
 testUtils.roundDecimal = function (item) {
-    return Math.round( item * 100) / 100;
+    return Math.round(item * 100) / 100;
 };
 
 testUtils.testTidFromDate = function testTidFromDate(date, useCassTicks) {

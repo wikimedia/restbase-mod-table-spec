@@ -1,12 +1,9 @@
-"use strict";
-
-// mocha defines to avoid JSHint breakage
-/* global describe, context, it, before, beforeEach, after, afterEach */
+'use strict';
 
 var router = module.parent.router;
 var deepEqual = require('../utils/test_utils.js').deepEqual;
 
-describe('Varint tables', function() {
+describe('Varint tables', function () {
 
     var varintTableSchema = {
         // keep extra redundant info for primary bucket table reconstruction
@@ -25,15 +22,16 @@ describe('Varint tables', function() {
         ]
     };
 
-    before(function () { return router.setup(); });
-    it('creates varint table', function() {
+    before(function () { return router.setup(); });  // eslint-disable-line
+
+    it('creates varint table', function () {
         this.timeout(10000);
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable',
             method: 'put',
             body: varintTableSchema
         })
-        .then(function(response) {
+        .then(function (response) {
             deepEqual(response.status, 201);
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/varintTable',
@@ -41,12 +39,12 @@ describe('Varint tables', function() {
                 body: {}
             });
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.status, 200);
             deepEqual(result.body, varintTableSchema);
         });
     });
-    it('retrieves using varint predicates', function() {
+    it('retrieves using varint predicates', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'put',
@@ -59,10 +57,10 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(item) {
-            deepEqual(item, {status: 201});
+        .then(function (item) {
+            deepEqual(item, { status: 201 });
         })
-        .then(function() {
+        .then(function () {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
                 method: 'put',
@@ -76,11 +74,11 @@ describe('Varint tables', function() {
                 }
             });
         })
-        .then(function(item) {
-            deepEqual(item, {status: 201});
+        .then(function (item) {
+            deepEqual(item, { status: 201 });
         })
-            // Simple query
-        .then(function() {
+        // Simple query
+        .then(function () {
             return router.request({
                 uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
                 method: 'get',
@@ -94,14 +92,14 @@ describe('Varint tables', function() {
                 }
             });
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 1);
             deepEqual(result.body.items[0].key, 'testing');
             deepEqual(result.body.items[0].rev, 1);
         });
     });
 
-    it('retrieves using eq predicate', function() {
+    it('retrieves using eq predicate', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -114,14 +112,14 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 1);
             deepEqual(result.body.items[0].key, 'testing');
             deepEqual(result.body.items[0].rev, 1);
         });
     });
 
-    it('retrieves using lt predicate', function() {
+    it('retrieves using lt predicate', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -134,14 +132,14 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 1);
             deepEqual(result.body.items[0].key, 'testing');
             deepEqual(result.body.items[0].rev, 1);
         });
     });
 
-    it('retrieves using gt predicate', function() {
+    it('retrieves using gt predicate', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -154,14 +152,14 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 1);
             deepEqual(result.body.items[0].key, 'testing');
             deepEqual(result.body.items[0].rev, 5);
         });
     });
 
-    it('retrieves using le predicate', function() {
+    it('retrieves using le predicate', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -174,12 +172,12 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 2);
         });
     });
 
-    it('retrieves using ge predicate', function() {
+    it('retrieves using ge predicate', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -192,12 +190,12 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 2);
         });
     });
 
-    it('retrieves using multiple predicates', function() {
+    it('retrieves using multiple predicates', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -211,14 +209,14 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 1);
             deepEqual(result.body.items[0].key, 'testing');
             deepEqual(result.body.items[0].rev, 1);
         });
     });
 
-    it('retrieves using multiple non-eq predicates', function() {
+    it('retrieves using multiple non-eq predicates', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -235,14 +233,14 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.body.items.length, 1);
             deepEqual(result.body.items[0].key, 'testing');
             deepEqual(result.body.items[0].rev, 1);
         });
     });
 
-    it('fails on multiple non-eq predicates on different columns', function() {
+    it('fails on multiple non-eq predicates on different columns', function () {
         return router.request({
             uri: '/restbase.cassandra.test.local/sys/table/varintTable/',
             method: 'get',
@@ -256,27 +254,27 @@ describe('Varint tables', function() {
                 }
             }
         })
-        .then(function(result) {
+        .then(function (result) {
             deepEqual(result.status, 500);
         });
     });
 
-    it('drops table', function() {
+    it('drops table', function () {
         this.timeout(15000);
         return router.request({
-            uri: "/restbase.cassandra.test.local/sys/table/varintTable",
-            method: "delete",
+            uri: '/restbase.cassandra.test.local/sys/table/varintTable',
+            method: 'delete',
             body: {}
         })
-        .then(function(res) {
+        .then(function (res) {
             deepEqual(res.status, 204);
             return router.request({
-                uri: "/restbase.cassandra.test.local/sys/table/varintTable",
-                method: "get",
+                uri: '/restbase.cassandra.test.local/sys/table/varintTable',
+                method: 'get',
                 body: {}
             });
         })
-        .then(function(res) {
+        .then(function (res) {
             deepEqual(res.status, 500);
         });
     });
